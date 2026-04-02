@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>NavBus — My Profile</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/user.layout.css"/>
+  <style>
+    .profile-hero {
+      padding: 32px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+    .profile-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 280px; height: 280px;
+      background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 65%);
+      pointer-events: none;
+      border-radius: 50%;
+    }
+    .profile-avatar-lg {
+      width: 84px; height: 84px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 2rem; font-weight: 700;
+      color: var(--bg-primary);
+      margin-bottom: 16px;
+      box-shadow: 0 0 32px rgba(201,168,76,0.25);
+      border: 2px solid var(--gold-border-2);
+    }
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: 1.5rem; font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .profile-email {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .profile-role-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+    }
+    .profile-role-badge.user {
+      background: rgba(201,168,76,0.08);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+    }
+    .profile-role-badge.admin {
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.25);
+      color: #60a5fa;
+    }
+    .profile-section {
+      padding: 0 20px;
+      margin-bottom: 24px;
+    }
+    .profile-section-title {
+      font-family: var(--font-display);
+      font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(201,168,76,0.45);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .profile-section-title::before {
+      content: '';
+      display: inline-block;
+      width: 2px; height: 12px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      border-radius: 2px;
+    }
+    .profile-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .profile-row {
+      display: flex; align-items: center;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(201,168,76,0.07);
+      gap: 14px;
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: rgba(201,168,76,0.06);
+      border: 1px solid var(--gold-border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); flex-shrink: 0;
+    }
+    .profile-row-content { flex: 1; min-width: 0; }
+    .profile-row-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .profile-row-value {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .profile-row-action {
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .profile-row:hover .profile-row-action { color: var(--gold); }
+    .profile-stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .profile-stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+    .profile-stat-value {
+      font-family: var(--font-display);
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .profile-stat-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+    .profile-logout-btn {
+      width: 100%;
+      padding: 15px;
+      background: rgba(248,113,113,0.06);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 14px;
+      color: var(--danger);
+      font-family: var(--font-display);
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .profile-logout-btn:hover {
+      background: rgba(248,113,113,0.12);
+      border-color: rgba(248,113,113,0.4);
+    }
+    .profile-version {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--text-disabled);
+      padding: 8px 20px 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="user-shell">
+
+  <!-- HEADER -->
+  <header class="user-header">
+    <a href="home.html" class="user-header-logo">
+      <svg width="30" height="18" viewBox="0 0 60 32" fill="none">
+        <rect x="2" y="5" width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+        <rect x="47" y="9" width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+        <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+        <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+        <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.4"/>
+      </svg>
+      <div>
+        <span class="user-header-logo-name">NAVBUS</span>
+        <span class="user-header-logo-sub">My Profile</span>
+      </div>
+    </a>
+    <div class="user-header-right">
+      <div class="user-avatar-btn" id="userAvatar">U</div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="user-main">
+
+    <!-- Profile Hero -->
+    <div class="profile-hero page-enter">
+      <div class="profile-avatar-lg" id="profileAvatarLg">U</div>
+      <div class="profile-name" id="profileName">Loading...</div>
+      <div class="profile-email" id="profileEmail">—</div>
+      <div class="profile-role-badge user" id="profileRoleBadge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span id="profileRoleText">Passenger</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-section">
+      <div class="profile-section-title">Activity</div>
+      <div class="profile-stat-grid">
+        <div class="profile-stat-card">
+          <div class="profile-stat-value" id="statSearches">0</div>
+          <div class="profile-stat-label">Searches</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="profile-stat-value" id="statJoined">—</div>
+          <div class="profile-stat-label">Member since</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Info -->
+    <div class="profile-section">
+      <div class="profile-section-title">Account</div>
+      <div class="profile-card">
+        <div class="profile-row">
+          <div class="profile-row-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="profile-row-content">
+            <div class="profile-row-label">Full Name</div>
+            <div class="profile-row-value" id="infoName">—</div>
+          </div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-row-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div class="profile-row-content">
+            <div class="profile-row-label">Email Address</div>
+            <div class="profile-row-value" id="infoEmail">—</div>
+          </div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-row-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div class="profile-row-content">
+            <div class="profile-row-label">Password</div>
+            <div class="profile-row-value">••••••••</div>
+          </div>
+          <a href="../auth/forgot-password.html" class="profile-row-action">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Info -->
+    <div class="profile-section">
+      <div class="profile-section-title">App</div>
+      <div class="profile-card">
+        <div class="profile-row">
+          <div class="profile-row-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="profile-row-content">
+            <div class="profile-row-label">Version</div>
+            <div class="profile-row-value">NavBus v1.0.0</div>
+          </div>
+        </div>
+        <div class="profile-row">
+          <div class="profile-row-icon">
+            <svg width="16" height="16" viewBox="0 0 60 32" fill="none">
+              <rect x="2" y="5" width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="2"/>
+              <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="2"/>
+              <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="profile-row-content">
+            <div class="profile-row-label">Platform</div>
+            <div class="profile-row-value">NavBus Smart Tracking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="profile-section">
+      <button class="profile-logout-btn" id="logoutBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Sign Out
+      </button>
+    </div>
+
+    <div class="profile-version">NavBus © 2025 — Smart Tracking System</div>
+    <div style="height:20px;"></div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="user-bottom-nav">
+    <a href="home.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Home</span>
+    </a>
+    <a href="routes.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Routes</span>
+    </a>
+    <a href="schedule.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8"  y1="2" x2="8"  y2="6"/>
+          <line x1="3"  y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Schedule</span>
+    </a>
+    <a href="profile.html" class="nav-tab active">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Profile</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/user.auth.guard.js"></script>
+<script>
+  // Await the guard's Promise — no more setTimeout hacks
+  window.NAVBUS_USER_READY.then(async (user) => {
+    if (!user) return; // Guard already redirected
+
+    const name     = user.name  || 'Passenger';
+    const email    = user.email || '—';
+    const role     = user.role  || 'user';
+    const initials = name.slice(0, 2).toUpperCase();
+
+    // Avatar & hero
+    const avatarEl = document.getElementById('userAvatar');
+    if (avatarEl) avatarEl.textContent = initials;
+    document.getElementById('profileAvatarLg').textContent = initials;
+    document.getElementById('profileName').textContent     = name;
+    document.getElementById('profileEmail').textContent    = email;
+    document.getElementById('infoName').textContent        = name;
+    document.getElementById('infoEmail').textContent       = email;
+
+    // Role badge
+    const badge    = document.getElementById('profileRoleBadge');
+    const roleText = document.getElementById('profileRoleText');
+    if (badge && roleText) {
+      if (role === 'admin') {
+        badge.classList.remove('user');
+        badge.classList.add('admin');
+        roleText.textContent = 'Administrator';
+      } else {
+        badge.classList.add('user');
+        roleText.textContent = 'Passenger';
+      }
+    }
+
+    // Member since — prefer createdAt from guard, fallback to getUser()
+    let joinedDate = user.createdAt ? new Date(user.createdAt) : null;
+    if (!joinedDate) {
+      const { data: { user: authUser } } = await NAVBUS_DB.auth.getUser();
+      if (authUser?.created_at) joinedDate = new Date(authUser.created_at);
+    }
+    const statJoined = document.getElementById('statJoined');
+    if (statJoined && joinedDate) {
+      statJoined.textContent = joinedDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    }
+
+    // Recent searches count
+    const recent = JSON.parse(localStorage.getItem('navbus_recent') || '[]');
+    const statSearches = document.getElementById('statSearches');
+    if (statSearches) statSearches.textContent = recent.length;
+
+    // Logout — correct path from modules/user/ → modules/auth/
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await NAVBUS_DB.auth.signOut();
+      window.location.href = '../auth/login.html';
+    });
+  });
+</script>
+</body>
+</html>

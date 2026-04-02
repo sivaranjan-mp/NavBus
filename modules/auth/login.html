@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Sign In</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+</head>
+<body class="auth-page">
+
+  <!-- Decorative orb -->
+  <div class="auth-orb-bottom"></div>
+
+  <div class="auth-card">
+    <div class="auth-card-inner">
+
+      <!-- Logo -->
+      <a href="../../index.html" class="auth-logo">
+        <svg class="auth-logo-icon" width="42" height="26" viewBox="0 0 60 32" fill="none">
+          <rect x="2" y="5" width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+          <rect x="47" y="9" width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.45"/>
+          <rect x="5"  y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+          <rect x="15" y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+          <rect x="25" y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+        </svg>
+        <div class="auth-logo-text">
+          <span class="auth-logo-name">NAVBUS</span>
+          <span class="auth-logo-tagline">Smart Tracking</span>
+        </div>
+      </a>
+
+      <!-- Header -->
+      <div class="auth-header">
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to your NavBus account to continue.</p>
+      </div>
+
+      <!-- Login Form -->
+      <form class="auth-form" id="loginForm" novalidate>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <div class="form-input-wrap">
+            <input
+              type="email"
+              id="loginEmail"
+              class="form-input has-icon"
+              placeholder="you@example.com"
+              autocomplete="email"
+              inputmode="email"
+              required
+            />
+            <span class="input-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <div class="form-input-wrap">
+            <input
+              type="password"
+              id="loginPassword"
+              class="form-input has-icon"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="input-icon" id="toggleLoginPwd" aria-label="Show password">
+              <svg id="eyeIconShow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="eyeIconHide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Remember + Forgot -->
+        <div class="form-row">
+          <label class="form-checkbox-wrap">
+            <input type="checkbox" class="form-checkbox" id="rememberMe"/>
+            <span class="form-checkbox-label">Remember me</span>
+          </label>
+          <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-gold" id="loginBtn" data-loading-text="Signing in...">
+          Sign In
+        </button>
+
+      </form>
+
+      <!-- Unconfirmed email notice (hidden by default) -->
+      <div id="unconfirmedNotice" style="display:none; margin-top: var(--space-4);">
+        <div class="auth-info-box info">
+          <span class="auth-info-box-icon">ℹ</span>
+          <span>Your email isn't confirmed yet. <button type="button" id="goToOTPBtn" style="color:var(--gold);font-weight:500;font-family:inherit;font-size:inherit;border:none;background:none;cursor:pointer;text-decoration:underline;">Enter OTP →</button></span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p class="auth-footer">
+        Don't have an account? <a href="register.html">Create one</a>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script src="js/auth.core.js"></script>
+  <script src="js/auth.redirect.js"></script>
+  <script src="js/auth.session.js"></script>
+  <script>
+    // ── Redirect if already logged in ──────────────────────
+    (async () => { await redirectIfAuthenticated(); })();
+
+    // ── Toggle Password Visibility ─────────────────────────
+    document.getElementById('toggleLoginPwd').addEventListener('click', () => {
+      const input   = document.getElementById('loginPassword');
+      const showEye = document.getElementById('eyeIconShow');
+      const hideEye = document.getElementById('eyeIconHide');
+      const isText  = input.type === 'text';
+      input.type    = isText ? 'password' : 'text';
+      showEye.style.display = isText ? '' : 'none';
+      hideEye.style.display = isText ? 'none' : '';
+    });
+
+    // ── Login Form Submit ──────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn   = document.getElementById('loginBtn');
+      const email = document.getElementById('loginEmail').value.trim();
+      const pwd   = document.getElementById('loginPassword').value;
+
+      clearAllErrors(e.target);
+
+      // Basic validation
+      if (!validateEmail(email)) {
+        showFieldError('loginEmail', 'Enter a valid email address.');
+        return;
+      }
+      if (!pwd) {
+        showFieldError('loginPassword', 'Password is required.');
+        return;
+      }
+
+      setButtonLoading(btn, true);
+
+      const { data, error } = await authSignIn(email, pwd);
+
+      if (error) {
+        setButtonLoading(btn, false);
+
+        // Handle unconfirmed email
+        if (error.message?.toLowerCase().includes('not confirmed') ||
+            error.message?.toLowerCase().includes('email not confirmed')) {
+          // Store email for OTP step and show notice
+          sessionStorage.setItem('navbus_pending_email', email);
+          document.getElementById('unconfirmedNotice').style.display = 'block';
+          Toast.warning('Please verify your email first.');
+          return;
+        }
+
+        if (error.message?.toLowerCase().includes('invalid login')) {
+          showFieldError('loginEmail', 'Invalid email or password.');
+          showFieldError('loginPassword', ' ');
+        } else {
+          Toast.error(error.message || 'Sign-in failed. Please try again.');
+        }
+        return;
+      }
+
+      Toast.success('Signed in successfully!');
+      setTimeout(async () => {
+        await redirectByRole(data.user);
+      }, 600);
+    });
+
+    // ── Go to OTP verification if email unconfirmed ────────
+    document.getElementById('goToOTPBtn')?.addEventListener('click', () => {
+      const email = sessionStorage.getItem('navbus_pending_email');
+      if (email) {
+        window.location.href = `register.html?step=otp&email=${encodeURIComponent(email)}`;
+      }
+    });
+  </script>
+</body>
+</html>

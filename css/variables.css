@@ -1,0 +1,75 @@
+/* ============================================================
+   NavBus — Global CSS Variables
+   ============================================================ */
+
+:root {
+  /* ── Brand Colors ── */
+  --gold:          #c9a84c;
+  --gold-light:    #e2c97e;
+  --gold-dark:     #8a6c28;
+  --gold-glow:     rgba(201, 168, 76, 0.15);
+  --gold-border:   rgba(201, 168, 76, 0.18);
+  --gold-border-2: rgba(201, 168, 76, 0.35);
+
+  /* ── Backgrounds ── */
+  --bg-primary:    #080806;
+  --bg-secondary:  #0e0d09;
+  --bg-surface:    #141209;
+  --bg-surface-2:  #1a1710;
+  --bg-input:      #111008;
+
+  /* ── Text ── */
+  --text-primary:   #f0ebe0;
+  --text-secondary: #b5a98a;
+  --text-muted:     #6e6354;
+  --text-disabled:  #3d3830;
+
+  /* ── Status ── */
+  --success:        #4ade80;
+  --success-bg:     rgba(74, 222, 128, 0.08);
+  --success-border: rgba(74, 222, 128, 0.25);
+  --danger:         #f87171;
+  --danger-bg:      rgba(248, 113, 113, 0.08);
+  --danger-border:  rgba(248, 113, 113, 0.25);
+  --warning:        #fbbf24;
+  --warning-bg:     rgba(251, 191, 36, 0.08);
+  --warning-border: rgba(251, 191, 36, 0.25);
+  --info:           #60a5fa;
+  --info-bg:        rgba(96, 165, 250, 0.08);
+  --info-border:    rgba(96, 165, 250, 0.25);
+
+  /* ── Typography ── */
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body:    'Barlow', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* ── Spacing ── */
+  --space-1: 0.25rem;  /* 4px  */
+  --space-2: 0.5rem;   /* 8px  */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* ── Borders / Radius ── */
+  --radius-sm:  6px;
+  --radius:     10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-pill: 999px;
+
+  /* ── Transitions ── */
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  --duration:     0.25s;
+  --duration-slow: 0.5s;
+
+  /* ── Shadows ── */
+  --shadow-card:  0 24px 64px rgba(0, 0, 0, 0.65);
+  --shadow-gold:  0 0 24px rgba(201, 168, 76, 0.2);
+  --shadow-input: 0 0 0 3px rgba(201, 168, 76, 0.12);
+}

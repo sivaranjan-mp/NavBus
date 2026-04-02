@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>NavBus — Live Map</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="../../lib/leaflet.css"/>
+  <link rel="stylesheet" href="css/user.layout.css"/>
+  <style>
+    * { box-sizing: border-box; }
+
+    body { margin:0; padding:0; background:#060604; overflow:hidden; }
+
+    .map-shell {
+      height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Full screen map ── */
+    #liveMap {
+      flex: 1;
+      width: 100%;
+      background: #060604;
+    }
+    #liveMap .leaflet-container  { background: #060604 !important; }
+    #liveMap .leaflet-tile       { filter: brightness(0.55) saturate(0.45) sepia(0.18); }
+    #liveMap .leaflet-control-zoom,
+    #liveMap .leaflet-attribution { display: none !important; }
+
+    /* ── Floating top header ── */
+    .map-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 400;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(to bottom, rgba(8,8,6,0.95) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .map-header > * { pointer-events: all; }
+
+    .map-back-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(8,8,6,0.9);
+      border: 1px solid var(--gold-border);
+      color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+      transition: all 0.18s;
+    }
+    .map-back-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    .map-title-chip {
+      flex: 1;
+      background: rgba(8,8,6,0.88);
+      border: 1px solid var(--gold-border);
+      border-radius: 10px;
+      padding: 7px 14px;
+      backdrop-filter: blur(12px);
+    }
+    .map-title-text {
+      font-family: var(--font-display);
+      font-size: 0.9rem; font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+      display: block;
+    }
+    .map-title-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .map-live-pill {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.28);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+    .map-live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(74,222,128,0.4); }
+      50%      { opacity:0.6; box-shadow: 0 0 0 5px transparent; }
+    }
+    .map-live-text {
+      font-family: var(--font-display);
+      font-size: 0.58rem; font-weight: 800;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: #4ade80;
+    }
+
+    /* ── Connection bar ── */
+    .connection-bar {
+      position: absolute;
+      top: 72px; left: 16px; right: 16px;
+      z-index: 400;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-family: var(--font-display);
+      font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 6px;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s;
+    }
+    .connection-bar.connected {
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.2);
+      color: #4ade80;
+    }
+    .connection-bar.connecting {
+      background: rgba(251,191,36,0.08);
+      border: 1px solid rgba(251,191,36,0.2);
+      color: var(--warning);
+    }
+    .connection-bar.disconnected {
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      color: var(--danger);
+    }
+
+    /* ── Bus list bottom sheet ── */
+    .bus-sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 400;
+      background: rgba(8,8,6,0.97);
+      border-top: 1px solid var(--gold-border);
+      border-radius: 20px 20px 0 0;
+      backdrop-filter: blur(20px);
+      max-height: 55vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet-drag-handle {
+      width: 36px; height: 3px;
+      background: rgba(201,168,76,0.25);
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+      cursor: grab;
+    }
+
+    .sheet-gold-bar {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, transparent);
+      margin: 12px 0 0;
+      flex-shrink: 0;
+    }
+
+    .sheet-header {
+      padding: 12px 20px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sheet-header-title {
+      font-family: var(--font-display);
+      font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(201,168,76,0.6);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sheet-header-title::before {
+      content: '';
+      display: inline-block;
+      width: 2px; height: 12px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      border-radius: 2px;
+    }
+    .sheet-bus-count {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .bus-cards-list {
+      overflow-y: auto;
+      padding: 0 16px 80px;
+      flex: 1;
+      scrollbar-width: none;
+    }
+    .bus-cards-list::-webkit-scrollbar { display: none; }
+
+    .bus-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .bus-card:hover {
+      border-color: var(--gold-border-2);
+      background: var(--bg-surface-2);
+    }
+    .bus-card.online { border-left: 3px solid #4ade80; }
+    .bus-card.offline { border-left: 3px solid #374151; }
+    .bus-card.maintenance { border-left: 3px solid var(--warning); }
+
+    .bus-card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: rgba(201,168,76,0.06);
+      border: 1px solid var(--gold-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .bus-card-info { flex: 1; min-width: 0; }
+    .bus-card-plate {
+      font-family: var(--font-mono);
+      font-size: 0.82rem; font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .bus-card-route {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bus-card-right {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 4px;
+      flex-shrink: 0;
+    }
+    .bus-card-status {
+      font-family: var(--font-display);
+      font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 99px;
+    }
+    .bus-card-status.online {
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.25);
+      color: #4ade80;
+    }
+    .bus-card-status.offline {
+      background: rgba(110,99,84,0.1);
+      border: 1px solid rgba(110,99,84,0.15);
+      color: var(--text-muted);
+    }
+    .bus-card-status.maintenance {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      color: var(--warning);
+    }
+    .bus-card-speed {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--gold);
+    }
+
+    .bus-card-track-btn {
+      font-family: var(--font-display);
+      font-size: 0.55rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gold);
+      background: rgba(201,168,76,0.08);
+      border: 1px solid var(--gold-border);
+      padding: 4px 10px; border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 2rem; margin-bottom: 10px; }
+    .empty-title {
+      font-family: var(--font-display);
+      font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .empty-sub { font-size: 0.72rem; }
+
+    /* ── Zoom controls ── */
+    .map-zoom-controls {
+      position: absolute;
+      right: 16px;
+      bottom: calc(55vh + 16px);
+      z-index: 400;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .zoom-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(8,8,6,0.9);
+      border: 1px solid var(--gold-border);
+      color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1.1rem;
+      backdrop-filter: blur(8px);
+      transition: all 0.18s;
+    }
+    .zoom-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── My location button ── */
+    .my-location-btn {
+      position: absolute;
+      right: 16px;
+      bottom: calc(55vh + 100px);
+      z-index: 400;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(8,8,6,0.9);
+      border: 1px solid var(--gold-border);
+      color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.18s;
+    }
+    .my-location-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Bottom nav (overlaying sheet) ── */
+    .map-bottom-nav {
+      position: fixed;
+      bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      height: 66px;
+      background: rgba(10,9,6,0.97);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--gold-border);
+      display: flex; align-items: center; justify-content: space-around;
+      z-index: 500;
+      padding: 0 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="map-shell">
+
+  <!-- MAP -->
+  <div id="liveMap"></div>
+
+  <!-- FLOATING HEADER -->
+  <div class="map-header">
+    <a href="home.html" class="map-back-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <div class="map-title-chip">
+      <span class="map-title-text">Live Map</span>
+      <span class="map-title-sub" id="mapSubtitle">Loading buses…</span>
+    </div>
+    <div class="map-live-pill">
+      <div class="map-live-dot"></div>
+      <span class="map-live-text">Live</span>
+    </div>
+  </div>
+
+  <!-- CONNECTION BAR -->
+  <div class="connection-bar connecting" id="connectionBar">
+    <span id="connectionText">◌ Connecting to realtime…</span>
+  </div>
+
+  <!-- ZOOM CONTROLS -->
+  <div class="map-zoom-controls">
+    <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+    <button class="zoom-btn" id="zoomOut" title="Zoom out">−</button>
+  </div>
+
+  <!-- MY LOCATION -->
+  <button class="my-location-btn" id="myLocationBtn" title="My location">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    </svg>
+  </button>
+
+  <!-- BUS LIST SHEET -->
+  <div class="bus-sheet" id="busSheet">
+    <div class="sheet-drag-handle"></div>
+    <div class="sheet-gold-bar"></div>
+    <div class="sheet-header">
+      <div class="sheet-header-title">Fleet Status</div>
+      <span class="sheet-bus-count" id="busCountText">— buses</span>
+    </div>
+    <div class="bus-cards-list" id="busCardsList">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="map-bottom-nav">
+    <a href="home.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Home</span>
+    </a>
+    <a href="routes.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Routes</span>
+    </a>
+    <a href="map.html" class="nav-tab active">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Map</span>
+    </a>
+    <a href="schedule.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8"  y1="2" x2="8"  y2="6"/>
+          <line x1="3"  y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Schedule</span>
+    </a>
+    <a href="profile.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Profile</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../lib/leaflet.js"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/user.auth.guard.js"></script>
+<script>
+  let _map        = null;
+  let _markers    = {};   // device_id → leaflet marker
+  let _busData    = {};   // device_id → bus object
+  let _channel    = null;
+
+  // ── Boot ──────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    initMap();
+    await loadAllBuses();
+    subscribeRealtime();
+    initControls();
+  });
+
+  // ── Init Leaflet map ──────────────────────────────────────
+  function initMap() {
+    _map = L.map('liveMap', {
+      center:           [11.0168, 76.9558], // Coimbatore default — near Karur
+      zoom:             12,
+      zoomControl:      false,
+      attributionControl: false,
+      preferCanvas:     true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+    }).addTo(_map);
+  }
+
+  // ── Load all buses + latest GPS ───────────────────────────
+  async function loadAllBuses() {
+    const { data: buses, error } = await NAVBUS_DB
+      .from('buses')
+      .select(`
+        id, device_id, number_plate, bus_name,
+        bus_type, capacity, status, is_active,
+        routes ( route_number, name, origin, destination ),
+        drivers ( name )
+      `)
+      .eq('is_active', true);
+
+    if (error || !buses) return;
+
+    // Get latest GPS for each bus
+    const { data: gpsRows } = await NAVBUS_DB
+      .from('bus_status')
+      .select('device_id, latitude, longitude, speed_kmh, heading_deg, recorded_at')
+      .in('device_id', buses.map(b => b.device_id))
+      .order('recorded_at', { ascending: false });
+
+    // Map latest GPS per device
+    const latestGPS = {};
+    if (gpsRows) {
+      gpsRows.forEach(g => {
+        if (!latestGPS[g.device_id]) latestGPS[g.device_id] = g;
+      });
+    }
+
+    // Attach GPS to buses and place markers
+    buses.forEach(bus => {
+      const gps = latestGPS[bus.device_id];
+      const enriched = { ...bus, gps };
+      _busData[bus.device_id] = enriched;
+
+      if (gps?.latitude != null) {
+        const stale = (Date.now() - new Date(gps.recorded_at).getTime()) > 90_000;
+        const status = stale ? 'offline' : bus.status;
+        placeMarker(bus, gps.latitude, gps.longitude, gps.heading_deg || 0, status);
+      }
+    });
+
+    // Update UI
+    const online = buses.filter(b => b.status === 'online').length;
+    document.getElementById('mapSubtitle').textContent =
+      `${online} of ${buses.length} buses online`;
+    document.getElementById('busCountText').textContent =
+      `${buses.length} bus${buses.length !== 1 ? 'es' : ''}`;
+
+    renderBusCards(buses, latestGPS);
+
+    // Fit map to markers if any
+    const coords = Object.values(latestGPS).map(g => [g.latitude, g.longitude]);
+    if (coords.length > 0) {
+      _map.fitBounds(coords, { padding: [60, 60], maxZoom: 14 });
+    }
+  }
+
+  // ── Place/update marker on map ────────────────────────────
+  function placeMarker(bus, lat, lng, heading, status) {
+    const isOnline = status === 'online';
+    const color    = isOnline ? '#4ade80' : '#475569';
+    const glow     = isOnline ? 'rgba(74,222,128,0.4)' : 'transparent';
+    const pulse    = isOnline ? 'animation:markerBeat 2s ease-in-out infinite;' : '';
+
+    const iconHtml = `
+      <style>
+        @keyframes markerBeat {
+          0%,100% { box-shadow:0 0 0 0 ${glow},0 4px 16px rgba(0,0,0,0.6); }
+          50%      { box-shadow:0 0 0 8px transparent,0 4px 16px rgba(0,0,0,0.6); }
+        }
+      </style>
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="
+          position:absolute;top:-10px;left:50%;
+          transform:translateX(-50%) rotate(${heading}deg);
+          width:0;height:0;
+          border-left:5px solid transparent;
+          border-right:5px solid transparent;
+          border-bottom:10px solid ${color};
+          filter:drop-shadow(0 0 3px ${color});
+          ${isOnline ? '' : 'display:none;'}
+        "></div>
+        <div style="
+          width:42px;height:42px;border-radius:50%;
+          background:rgba(8,8,6,0.92);
+          border:2px solid ${color};
+          display:flex;align-items:center;justify-content:center;
+          font-size:18px;
+          ${pulse}
+          box-shadow:0 0 12px ${glow},0 4px 16px rgba(0,0,0,0.7);
+          position:relative;z-index:1;
+        ">🚌</div>
+        <div style="
+          position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);
+          background:rgba(8,8,6,0.94);
+          border:1px solid ${color};border-radius:4px;
+          padding:2px 7px;
+          font-family:'JetBrains Mono',monospace;font-size:9px;
+          color:${color};white-space:nowrap;letter-spacing:0.06em;
+        ">${escHtml(bus.number_plate)}</div>
+      </div>`;
+
+    const icon = L.divIcon({
+      className: '',
+      html: iconHtml,
+      iconSize:   [42, 64],
+      iconAnchor: [21, 21],
+    });
+
+    if (_markers[bus.device_id]) {
+      _markers[bus.device_id].setLatLng([lat, lng]).setIcon(icon);
+    } else {
+      const marker = L.marker([lat, lng], { icon }).addTo(_map);
+      marker.on('click', () => {
+        _map.panTo([lat, lng], { animate: true, duration: 0.6 });
+        window.location.href = `track.html?id=${bus.id}`;
+      });
+      _markers[bus.device_id] = marker;
+    }
+  }
+
+  // ── Render bus cards in bottom sheet ─────────────────────
+  function renderBusCards(buses, latestGPS) {
+    const el = document.getElementById('busCardsList');
+
+    if (!buses || buses.length === 0) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🚌</div>
+          <div class="empty-title">No Buses Registered</div>
+          <div class="empty-sub">Buses will appear here once added by admin.</div>
+        </div>`;
+      return;
+    }
+
+    // Sort: online first
+    const sorted = [...buses].sort((a, b) => {
+      if (a.status === 'online' && b.status !== 'online') return -1;
+      if (b.status === 'online' && a.status !== 'online') return 1;
+      return 0;
+    });
+
+    el.innerHTML = sorted.map(bus => {
+      const gps    = latestGPS?.[bus.device_id];
+      const stale  = gps ? (Date.now() - new Date(gps.recorded_at).getTime()) > 90_000 : true;
+      const status = stale ? 'offline' : (bus.status || 'offline');
+      const speed  = gps?.speed_kmh ? `${Math.round(gps.speed_kmh)} km/h` : '';
+      const route  = bus.routes;
+
+      return `
+        <div class="bus-card ${status}" onclick="focusBus('${bus.device_id}', '${bus.id}')">
+          <div class="bus-card-icon">🚌</div>
+          <div class="bus-card-info">
+            <div class="bus-card-plate">${escHtml(bus.number_plate)}</div>
+            <div class="bus-card-route">
+              ${route
+                ? `${escHtml(route.route_number)} — ${escHtml(route.name)}`
+                : (bus.bus_name || 'No route assigned')
+              }
+            </div>
+          </div>
+          <div class="bus-card-right">
+            <span class="bus-card-status ${status}">${status}</span>
+            ${speed ? `<span class="bus-card-speed">${speed}</span>` : ''}
+            <span class="bus-card-track-btn">Track →</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Focus map on a bus ────────────────────────────────────
+  function focusBus(deviceId, busId) {
+    const marker = _markers[deviceId];
+    if (marker) {
+      _map.panTo(marker.getLatLng(), { animate: true, duration: 0.6 });
+      _map.setZoom(16);
+    } else {
+      // No GPS yet — go to track page
+      window.location.href = `track.html?id=${busId}`;
+    }
+  }
+
+  // ── Supabase Realtime subscription ───────────────────────
+  function subscribeRealtime() {
+    setConnectionStatus('connecting');
+
+    _channel = NAVBUS_DB
+      .channel('navbus_live_map')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'bus_status' },
+        (payload) => {
+          const gps = payload.new;
+          if (!gps?.device_id || gps.latitude == null) return;
+
+          const bus = _busData[gps.device_id];
+          if (!bus) return;
+
+          // Update marker position
+          placeMarker(bus, gps.latitude, gps.longitude, gps.heading_deg || 0, 'online');
+
+          // Update bus data
+          _busData[gps.device_id].gps    = gps;
+          _busData[gps.device_id].status = 'online';
+
+          // Update subtitle count
+          const online = Object.values(_busData).filter(b => b.status === 'online').length;
+          const total  = Object.keys(_busData).length;
+          document.getElementById('mapSubtitle').textContent =
+            `${online} of ${total} buses online`;
+        }
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnectionStatus('disconnected');
+        }
+      });
+  }
+
+  function setConnectionStatus(status) {
+    const bar  = document.getElementById('connectionBar');
+    const text = document.getElementById('connectionText');
+    if (!bar) return;
+    bar.className = `connection-bar ${status}`;
+    const labels = {
+      connected:    '● Realtime connected',
+      connecting:   '◌ Connecting…',
+      disconnected: '✕ Disconnected — tap to retry',
+    };
+    text.textContent = labels[status] || status;
+
+    // Hide after 3s if connected
+    if (status === 'connected') {
+      setTimeout(() => { bar.style.opacity = '0'; }, 3000);
+    } else {
+      bar.style.opacity = '1';
+    }
+  }
+
+  // ── Map controls ──────────────────────────────────────────
+  function initControls() {
+    document.getElementById('zoomIn').onclick  = () => _map.zoomIn();
+    document.getElementById('zoomOut').onclick = () => _map.zoomOut();
+
+    document.getElementById('myLocationBtn').onclick = () => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          _map.panTo([latitude, longitude], { animate: true });
+          _map.setZoom(15);
+
+          // Blue dot for user location
+          L.circleMarker([latitude, longitude], {
+            radius: 8,
+            color:  '#60a5fa',
+            fillColor: '#60a5fa',
+            fillOpacity: 0.8,
+            weight: 2,
+          }).addTo(_map).bindPopup('You are here').openPopup();
+        },
+        () => Toast.warning('Could not get your location.')
+      );
+    };
+
+    // Disconnected bar → reconnect on tap
+    document.getElementById('connectionBar').onclick = () => {
+      if (_channel) NAVBUS_DB.removeChannel(_channel);
+      subscribeRealtime();
+    };
+  }
+
+  function escHtml(str) {
+    if (!str) return '—';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Cleanup
+  window.addEventListener('beforeunload', () => {
+    if (_channel) NAVBUS_DB.removeChannel(_channel);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Register Bus</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/admin.layout.css"/>
+  <link rel="stylesheet" href="css/admin.forms.css"/>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+      <svg class="sidebar-logo-icon" width="36" height="22" viewBox="0 0 60 32" fill="none">
+        <rect x="2" y="5" width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+        <rect x="47" y="9" width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+        <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+        <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+        <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.45"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-name">NAVBUS</span>
+        <span class="sidebar-logo-sub">Smart Tracking</span>
+      </div>
+    </a>
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="buses.html" class="sidebar-link active"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Fleet / Buses</a>
+      <a href="routes.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/></svg>Routes</a>
+      <a href="drivers.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Drivers</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-status-bar"><div class="sidebar-live-dot"></div><span class="sidebar-live-label">All Systems Online</span></div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">AD</div>
+        <div class="sidebar-user-info"><span class="sidebar-user-name" id="sidebarUserName">Administrator</span><span class="sidebar-user-role">Admin</span><span class="sidebar-user-email" id="sidebarUserEmail" style="font-size:0.6rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:block;"></span></div>
+        <button class="sidebar-logout-btn" id="logoutBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-body">
+    <header class="admin-header">
+      <div class="header-left">
+        <button class="header-menu-btn" id="headerMenuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="header-breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-item">Dashboard</a>
+          <span class="breadcrumb-separator">›</span>
+          <a href="buses.html" class="breadcrumb-item">Fleet</a>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item current">Register Bus</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time"><div style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:livePulse 1.8s infinite;flex-shrink:0;"></div><span id="headerClock">00:00:00</span></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title"><span class="page-title-accent"></span>Register New Bus</h1>
+          <p class="page-subtitle">Add a bus with its IoT device ID and camera stream URLs</p>
+        </div>
+        <div class="page-actions">
+          <a href="buses.html" class="btn btn-outline btn-md">← Back to Fleet</a>
+        </div>
+      </div>
+
+      <!-- Form alert -->
+      <div id="formAlert" class="form-alert"></div>
+
+      <form id="addBusForm" novalidate>
+        <div class="form-card">
+
+          <!-- ── Section 1: Identity ── -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <div class="form-section-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <div class="form-section-title">Bus Identity</div>
+                <div class="form-section-sub">Number plate, model, and basic specs</div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label class="form-label" for="busNumberPlate">
+                  Number Plate <span class="required-star">*</span>
+                </label>
+                <div class="input-wrap">
+                  <input type="text" id="busNumberPlate" class="form-input mono has-prefix"
+                    placeholder="MH12AB1234"
+                    autocomplete="off" spellcheck="false" maxlength="15"/>
+                  <span class="input-prefix">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  </span>
+                </div>
+                <span class="form-hint-text">Vehicle registration number — must be unique</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="busName">Bus Name <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+                <div class="input-wrap">
+                  <input type="text" id="busName" class="form-input has-prefix" placeholder="e.g. Route 12 Blue"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="busModel">Bus Model</label>
+                <div class="input-wrap">
+                  <input type="text" id="busModel" class="form-input has-prefix" placeholder="e.g. Tata Starbus 12m"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="busType">
+                  Bus Type <span class="required-star">*</span>
+                </label>
+                <select id="busType" class="form-select">
+                  <option value="">Select type…</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Express">Express</option>
+                  <option value="Mini">Mini Bus</option>
+                  <option value="Articulated">Articulated</option>
+                  <option value="Double Decker">Double Decker</option>
+                  <option value="Electric">Electric</option>
+                  <option value="Sleeper">Sleeper</option>
+                  <option value="AC">AC</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="busCapacity">
+                  Seating Capacity <span class="required-star">*</span>
+                </label>
+                <div class="input-wrap">
+                  <input type="number" id="busCapacity" class="form-input has-prefix"
+                    placeholder="40" min="1" max="120" value="40"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                  <span class="input-suffix"><span class="input-suffix-text">Seats</span></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="busRoute">Assign Route</label>
+                <select id="busRoute" class="form-select">
+                  <option value="">Unassigned</option>
+                  <!-- Loaded by JS -->
+                </select>
+              </div>
+
+              <div class="form-group col-span-2">
+                <label class="form-label" for="busDriver">Assign Driver</label>
+                <select id="busDriver" class="form-select">
+                  <option value="">Unassigned</option>
+                  <!-- Loaded by JS -->
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── Section 2: Device ID ── -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <div class="form-section-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div>
+                <div class="form-section-title">IoT Device Identity</div>
+                <div class="form-section-sub">Hardware device ID — links GPS data to this bus</div>
+              </div>
+            </div>
+
+            <div class="form-group" style="max-width:400px;">
+              <label class="form-label" for="busDeviceId">
+                Device ID <span class="required-star">*</span>
+                <span class="label-badge">Unique</span>
+              </label>
+              <div class="input-wrap">
+                <input type="text" id="busDeviceId" class="form-input mono has-prefix"
+                  placeholder="BT-001"
+                  autocomplete="off" spellcheck="false" maxlength="30"/>
+                <span class="input-prefix">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                </span>
+              </div>
+            </div>
+
+            <div class="device-info-box" style="max-width:500px;">
+              <span class="device-info-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </span>
+              <span class="device-info-text">
+                This ID must exactly match <strong>DEVICE_ID</strong> in the ESP32 firmware
+                (<code style="font-family:var(--font-mono);font-size:0.82em;color:var(--gold);">config.h</code>).
+                Once set, all GPS telemetry from that device is automatically linked to this bus.
+                The Device ID cannot be changed after the bus is registered without admin intervention.
+              </span>
+            </div>
+          </div>
+
+          <!-- ── Section 3: Camera URLs ── -->
+          <div class="form-section">
+            <div class="form-section-header">
+              <div class="form-section-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+              </div>
+              <div>
+                <div class="form-section-title">Camera Streams</div>
+                <div class="form-section-sub">WiFi IP camera RTSP / MJPEG stream URLs (optional)</div>
+              </div>
+            </div>
+
+            <div class="form-grid">
+
+              <div class="form-group camera-url-group">
+                <label class="form-label" for="camFront">
+                  Front Camera URL
+                </label>
+                <div class="input-wrap">
+                  <input type="url" id="camFront" class="form-input has-prefix"
+                    placeholder="rtsp://192.168.1.100:554/stream" style="padding-right:80px;"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="input-suffix">
+                    <button type="button" class="camera-preview-btn" data-input-id="camFront">Preview</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-group camera-url-group">
+                <label class="form-label" for="camRear">Rear Camera URL</label>
+                <div class="input-wrap">
+                  <input type="url" id="camRear" class="form-input has-prefix"
+                    placeholder="rtsp://192.168.1.101:554/stream" style="padding-right:80px;"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="input-suffix">
+                    <button type="button" class="camera-preview-btn" data-input-id="camRear">Preview</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-group camera-url-group">
+                <label class="form-label" for="camCabin">Cabin Camera URL</label>
+                <div class="input-wrap">
+                  <input type="url" id="camCabin" class="form-input has-prefix"
+                    placeholder="rtsp://192.168.1.102:554/stream" style="padding-right:80px;"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="input-suffix">
+                    <button type="button" class="camera-preview-btn" data-input-id="camCabin">Preview</button>
+                  </span>
+                </div>
+              </div>
+
+              <div class="form-group camera-url-group">
+                <label class="form-label" for="camDriver">Driver Camera URL</label>
+                <div class="input-wrap">
+                  <input type="url" id="camDriver" class="form-input has-prefix"
+                    placeholder="rtsp://192.168.1.103:554/stream" style="padding-right:80px;"/>
+                  <span class="input-prefix"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                  <span class="input-suffix">
+                    <button type="button" class="camera-preview-btn" data-input-id="camDriver">Preview</button>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="device-info-box" style="max-width:600px;margin-top:16px;">
+              <span class="device-info-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </span>
+              <span class="device-info-text">
+                Supports <strong>RTSP</strong> (rtsp://...), <strong>MJPEG over HTTP</strong> (http://...),
+                and <strong>HLS</strong> (.m3u8) streams from WiFi IP cameras on the same network
+                or exposed via a proxy. URLs are stored and used for live monitoring.
+              </span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="form-footer">
+            <a href="buses.html" class="btn btn-ghost btn-md">Cancel</a>
+            <button type="submit" class="btn btn-gold btn-lg" id="saveBusBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Register Bus
+            </button>
+          </div>
+
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<!-- Camera Preview Modal -->
+<div id="cameraPreviewModal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);">
+  <div style="background:var(--bg-secondary);border:1px solid var(--gold-border);border-radius:16px;width:100%;max-width:640px;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--gold-border);">
+      <span style="font-family:var(--font-display);font-size:0.75rem;font-weight:700;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;">Camera Preview</span>
+      <button onclick="document.getElementById('cameraPreviewModal').style.display='none';" style="color:var(--text-muted);font-size:1rem;background:none;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:18px;text-align:center;">
+      <img id="cameraPreviewFrame" src="" alt="Camera feed" style="display:none;max-width:100%;border-radius:8px;"/>
+      <a id="cameraPreviewLink" href="#" target="_blank" rel="noopener" style="display:none;color:var(--gold);font-size:0.85rem;" >
+        Stream URL (click to open in new tab) →
+      </a>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-top:12px;">RTSP/HLS streams require a compatible media player or proxy.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/admin.auth.guard.js"></script>
+<script src="js/admin.layout.js"></script>
+<script src="js/admin.bus-form.shared.js"></script>
+<script src="js/admin.add-bus.js"></script>
+</body>
+</html>

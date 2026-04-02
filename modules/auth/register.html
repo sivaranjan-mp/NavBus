@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Create Account</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+</head>
+<body class="auth-page">
+
+  <div class="auth-orb-bottom"></div>
+
+  <div class="auth-card">
+    <div class="auth-card-inner">
+
+      <!-- Logo -->
+      <a href="../../index.html" class="auth-logo">
+        <svg class="auth-logo-icon" width="42" height="26" viewBox="0 0 60 32" fill="none">
+          <rect x="2" y="5" width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+          <rect x="47" y="9" width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.45"/>
+          <rect x="5"  y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+          <rect x="15" y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+          <rect x="25" y="7"  width="7" height="5" rx="1" stroke="#c9a84c" stroke-width="0.9"/>
+        </svg>
+        <div class="auth-logo-text">
+          <span class="auth-logo-name">NAVBUS</span>
+          <span class="auth-logo-tagline">Smart Tracking</span>
+        </div>
+      </a>
+
+      <!-- Step Indicator -->
+      <div class="step-indicator" id="stepIndicator">
+        <div class="step-dot active" id="step1Dot">
+          <div class="step-dot-circle">1</div>
+          <span class="step-dot-label">Details</span>
+        </div>
+        <div class="step-dot" id="step2Dot">
+          <div class="step-dot-circle">2</div>
+          <span class="step-dot-label">Verify</span>
+        </div>
+      </div>
+
+      <!-- ═══ STEP 1: Registration Form ═══ -->
+      <div id="stepRegister">
+        <div class="auth-header">
+          <h1 class="auth-title">Create Account</h1>
+          <p class="auth-subtitle">Join NavBus Smart Tracking today.</p>
+        </div>
+
+        <!-- Admin detected notice -->
+        <div id="adminNotice" style="display:none; margin-bottom: var(--space-5);">
+          <div class="auth-info-box info">
+            <span class="auth-info-box-icon">🛡</span>
+            <div>
+              <strong style="color:var(--gold);">Admin account detected.</strong>
+              <span> This email is registered as an administrator.</span>
+            </div>
+          </div>
+        </div>
+
+        <form class="auth-form" id="registerForm" novalidate>
+
+          <!-- Full Name -->
+          <div class="form-group">
+            <label class="form-label" for="regName">Full Name</label>
+            <div class="form-input-wrap">
+              <input type="text" id="regName" class="form-input has-icon"
+                placeholder="Your full name"
+                autocomplete="name" required/>
+              <span class="input-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email Address</label>
+            <div class="form-input-wrap">
+              <input type="email" id="regEmail" class="form-input has-icon"
+                placeholder="you@example.com"
+                autocomplete="email" inputmode="email" required/>
+              <span class="input-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <div class="form-input-wrap">
+              <input type="password" id="regPassword" class="form-input has-icon"
+                placeholder="Min. 8 characters"
+                autocomplete="new-password" required/>
+              <button type="button" class="input-icon" id="toggleRegPwd" aria-label="Toggle password">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Password strength -->
+            <div class="password-strength-wrap" id="pwdStrengthWrap" style="display:none">
+              <div class="password-strength-track">
+                <div class="password-strength-bar" id="pwdStrengthBar"></div>
+              </div>
+              <span class="password-strength-label" id="pwdStrengthLabel"></span>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="form-group">
+            <label class="form-label" for="regConfirmPwd">Confirm Password</label>
+            <div class="form-input-wrap">
+              <input type="password" id="regConfirmPwd" class="form-input has-icon"
+                placeholder="Repeat your password"
+                autocomplete="new-password" required/>
+              <span class="input-icon" id="confirmPwdIcon" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-gold" id="registerBtn" data-loading-text="Creating account...">
+            Create Account
+          </button>
+
+        </form>
+
+        <p class="auth-footer">
+          Already have an account? <a href="login.html">Sign in</a>
+        </p>
+      </div>
+
+      <!-- ═══ STEP 2: OTP Verification ═══ -->
+      <div id="stepOTP" style="display:none">
+        <div class="auth-header">
+          <h1 class="auth-title">Verify Email</h1>
+          <p class="auth-subtitle">
+            We sent a 6-digit code to<br/>
+            <strong id="otpEmailDisplay" style="color:var(--gold);">your email</strong>
+          </p>
+        </div>
+
+        <div class="auth-info-box info" style="margin-bottom: var(--space-6);">
+          <span class="auth-info-box-icon">ℹ</span>
+          <span>Check your inbox and spam folder. The code expires in 10 minutes.</span>
+        </div>
+
+        <!-- 6-digit OTP boxes -->
+        <div class="otp-container" id="otpContainer">
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code"/>
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+          <input class="otp-input" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
+        </div>
+
+        <div id="otpErrorMsg" style="display:none; margin-bottom: var(--space-4);">
+          <div class="auth-info-box error">
+            <span class="auth-info-box-icon">✕</span>
+            <span id="otpErrorText">Invalid code. Please try again.</span>
+          </div>
+        </div>
+
+        <button class="btn btn-gold" id="verifyOTPBtn" data-loading-text="Verifying...">
+          Verify & Continue
+        </button>
+
+        <!-- Resend -->
+        <div class="otp-resend">
+          Didn't receive it?
+          <button id="resendOTPBtn" disabled>Resend Code</button>
+          <span class="otp-countdown" id="otpCountdown">in <span id="countdownSec">60</span>s</span>
+        </div>
+      </div>
+
+      <!-- ═══ SUCCESS ═══ -->
+      <div id="stepSuccess" style="display:none; text-align:center; padding: var(--space-6) 0;">
+        <div style="font-size:3rem; margin-bottom:var(--space-4);">✓</div>
+        <h2 class="auth-title" style="color:var(--success); margin-bottom:var(--space-2);">Verified!</h2>
+        <p class="auth-subtitle">Your account is ready. Redirecting you now...</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/utils.js"></script>
+  <script src="js/auth.core.js"></script>
+  <script src="js/auth.redirect.js"></script>
+  <script src="js/auth.session.js"></script>
+  <script>
+    (async () => { await redirectIfAuthenticated(); })();
+
+    let pendingEmail = '';
+    let countdownInterval = null;
+
+    // ── Check if arrived from login page OTP redirect ──────
+    const urlParams  = new URLSearchParams(window.location.search);
+    const urlStep    = urlParams.get('step');
+    const urlEmail   = urlParams.get('email');
+
+    if (urlStep === 'otp' && urlEmail) {
+      pendingEmail = decodeURIComponent(urlEmail);
+      showOTPStep(pendingEmail);
+    }
+
+    // ── Admin email detection ──────────────────────────────
+    document.getElementById('regEmail').addEventListener('blur', (e) => {
+      const notice = document.getElementById('adminNotice');
+      notice.style.display = isAdminEmail(e.target.value) ? 'block' : 'none';
+    });
+
+    // ── Password show/hide ─────────────────────────────────
+    document.getElementById('toggleRegPwd').addEventListener('click', () => {
+      const input = document.getElementById('regPassword');
+      input.type  = input.type === 'password' ? 'text' : 'password';
+    });
+
+    // ── Password strength ──────────────────────────────────
+    document.getElementById('regPassword').addEventListener('input', (e) => {
+      const val   = e.target.value;
+      const wrap  = document.getElementById('pwdStrengthWrap');
+      const bar   = document.getElementById('pwdStrengthBar');
+      const label = document.getElementById('pwdStrengthLabel');
+      wrap.style.display = val ? 'block' : 'none';
+      updatePasswordStrengthBar(val, bar, label);
+    });
+
+    // ── Confirm password match ─────────────────────────────
+    document.getElementById('regConfirmPwd').addEventListener('input', (e) => {
+      const pwd    = document.getElementById('regPassword').value;
+      const icon   = document.getElementById('confirmPwdIcon');
+      const match  = e.target.value === pwd && e.target.value.length > 0;
+      icon.style.display = match ? 'flex' : 'none';
+    });
+
+    // ── Register form submit ───────────────────────────────
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAllErrors(e.target);
+
+      const btn     = document.getElementById('registerBtn');
+      const name    = document.getElementById('regName').value.trim();
+      const email   = document.getElementById('regEmail').value.trim();
+      const pwd     = document.getElementById('regPassword').value;
+      const confirm = document.getElementById('regConfirmPwd').value;
+
+      // Validation
+      if (!name)                  { showFieldError('regName',       'Full name is required.'); return; }
+      if (name.length < 2)        { showFieldError('regName',       'Name must be at least 2 characters.'); return; }
+      if (!validateEmail(email))  { showFieldError('regEmail',      'Enter a valid email address.'); return; }
+      if (!validatePassword(pwd)) { showFieldError('regPassword',   'Password must be at least 8 characters.'); return; }
+      if (pwd !== confirm)        { showFieldError('regConfirmPwd', 'Passwords do not match.'); return; }
+
+      setButtonLoading(btn, true);
+
+      const { data, error, requiresOTP } = await authSignUp(name, email, pwd);
+
+      if (error) {
+        setButtonLoading(btn, false);
+        if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+          showFieldError('regEmail', 'This email is already registered. Try signing in.');
+        } else {
+          Toast.error(error.message || 'Registration failed. Please try again.');
+        }
+        return;
+      }
+
+      pendingEmail = email;
+      setButtonLoading(btn, false);
+
+      if (requiresOTP) {
+        Toast.info('Check your email for the verification code.');
+        showOTPStep(email);
+      } else {
+        // Email confirmation disabled in Supabase — direct login
+        Toast.success('Account created! Redirecting...');
+        showSuccessStep();
+        setTimeout(async () => { await redirectByRole(data.user); }, 2000);
+      }
+    });
+
+    // ── Show OTP step ──────────────────────────────────────
+    function showOTPStep(email) {
+      document.getElementById('stepRegister').style.display    = 'none';
+      document.getElementById('stepOTP').style.display         = 'block';
+      document.getElementById('otpEmailDisplay').textContent   = email;
+
+      // Update step indicator
+      document.getElementById('step1Dot').classList.remove('active');
+      document.getElementById('step1Dot').classList.add('done');
+      document.getElementById('step2Dot').classList.add('active');
+
+      initOTPInputs();
+      startResendCountdown();
+      document.querySelector('.otp-input').focus();
+    }
+
+    function showSuccessStep() {
+      document.getElementById('stepOTP').style.display     = 'none';
+      document.getElementById('stepRegister').style.display = 'none';
+      document.getElementById('stepSuccess').style.display = 'block';
+    }
+
+    // ── OTP Input — 6 boxes with auto-advance ─────────────
+    function initOTPInputs() {
+      const inputs = document.querySelectorAll('.otp-input');
+
+      inputs.forEach((input, i) => {
+        // Remove error state on focus
+        input.addEventListener('focus', () => {
+          inputs.forEach(inp => inp.classList.remove('otp-error'));
+          document.getElementById('otpErrorMsg').style.display = 'none';
+        });
+
+        // Only allow digits
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace') {
+            if (!input.value && i > 0) {
+              inputs[i - 1].focus();
+              inputs[i - 1].value = '';
+              inputs[i - 1].classList.remove('otp-filled');
+            } else {
+              input.classList.remove('otp-filled');
+            }
+          }
+          if (e.key === 'ArrowLeft'  && i > 0) { e.preventDefault(); inputs[i - 1].focus(); }
+          if (e.key === 'ArrowRight' && i < inputs.length - 1) { e.preventDefault(); inputs[i + 1].focus(); }
+        });
+
+        input.addEventListener('input', (e) => {
+          const val = e.target.value.replace(/[^0-9]/g, '');
+          input.value = val ? val.slice(-1) : '';
+
+          if (input.value) {
+            input.classList.add('otp-filled');
+            if (i < inputs.length - 1) {
+              inputs[i + 1].focus();
+            } else {
+              // All filled — auto-trigger verify
+              const code = Array.from(inputs).map(inp => inp.value).join('');
+              if (code.length === 6) triggerOTPVerify();
+            }
+          } else {
+            input.classList.remove('otp-filled');
+          }
+        });
+
+        // Paste handler
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+          pasted.split('').forEach((char, idx) => {
+            if (inputs[idx]) {
+              inputs[idx].value = char;
+              inputs[idx].classList.add('otp-filled');
+            }
+          });
+          const nextEmpty = Math.min(pasted.length, inputs.length - 1);
+          inputs[nextEmpty].focus();
+          if (pasted.length === 6) triggerOTPVerify();
+        });
+      });
+    }
+
+    // ── Verify OTP ─────────────────────────────────────────
+    async function triggerOTPVerify() {
+      const btn    = document.getElementById('verifyOTPBtn');
+      const inputs = document.querySelectorAll('.otp-input');
+      const code   = Array.from(inputs).map(i => i.value).join('');
+
+      if (code.length < 6) {
+        Toast.warning('Please enter the complete 6-digit code.');
+        return;
+      }
+
+      setButtonLoading(btn, true);
+
+      const { data, error } = await authVerifySignupOTP(pendingEmail, code);
+
+      if (error) {
+        setButtonLoading(btn, false);
+        inputs.forEach(i => i.classList.add('otp-error'));
+        const errBox  = document.getElementById('otpErrorMsg');
+        const errText = document.getElementById('otpErrorText');
+        errText.textContent = error.message?.includes('expired')
+          ? 'Code has expired. Please request a new one.'
+          : 'Invalid code. Please check and try again.';
+        errBox.style.display = 'flex';
+        return;
+      }
+
+      setButtonLoading(btn, false);
+      Toast.success('Email verified successfully!');
+      showSuccessStep();
+      setTimeout(async () => { await redirectByRole(data.user); }, 1800);
+    }
+
+    document.getElementById('verifyOTPBtn').addEventListener('click', triggerOTPVerify);
+
+    // ── Resend OTP countdown ───────────────────────────────
+    function startResendCountdown(seconds = 60) {
+      const btn  = document.getElementById('resendOTPBtn');
+      const tick = document.getElementById('countdownSec');
+      const wrap = document.getElementById('otpCountdown');
+      let remaining = seconds;
+
+      btn.disabled    = true;
+      wrap.style.display = 'inline';
+      tick.textContent   = remaining;
+
+      clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        remaining--;
+        tick.textContent = remaining;
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          btn.disabled       = false;
+          wrap.style.display = 'none';
+        }
+      }, 1000);
+    }
+
+    // ── Resend OTP ─────────────────────────────────────────
+    document.getElementById('resendOTPBtn').addEventListener('click', async () => {
+      const { error } = await authResendOTP(pendingEmail, 'signup');
+      if (error) {
+        Toast.error('Could not resend code. Please try again.');
+      } else {
+        Toast.info('New code sent — check your inbox.');
+        document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('otp-filled','otp-error'); });
+        document.getElementById('otpErrorMsg').style.display = 'none';
+        startResendCountdown(60);
+        document.querySelector('.otp-input').focus();
+      }
+    });
+  </script>
+</body>
+</html>
