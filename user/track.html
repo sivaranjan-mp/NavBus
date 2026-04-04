@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>NavBus — Live Track</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="../../lib/leaflet.css"/>
+  <link rel="stylesheet" href="css/user.layout.css"/>
+  <link rel="stylesheet" href="css/user.track.css"/>
+</head>
+<body style="margin:0;padding:0;background:#060604;overflow:hidden;">
+
+<div class="track-shell">
+
+  <!-- ═══ MAP ═══ -->
+  <div id="userTrackMap" style="flex:1;width:100%;"></div>
+
+  <!-- ═══ FLOATING HEADER ═══ -->
+  <div class="track-header">
+    <!-- Back button -->
+    <a href="home.html" class="track-back-btn" id="trackBackBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+
+    <!-- Bus info chip -->
+    <div class="track-header-info">
+      <span class="track-header-plate" id="trackPlate">Loading…</span>
+      <span class="track-header-route" id="trackRoute">Fetching bus data…</span>
+    </div>
+
+    <!-- Live indicator -->
+    <div class="track-live-pill">
+      <div class="track-live-dot"></div>
+      <span class="track-live-text">Live</span>
+    </div>
+  </div>
+
+  <!-- ═══ BOTTOM SHEET ═══ -->
+  <div class="track-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-gold-line"></div>
+
+    <!-- Title row -->
+    <div class="sheet-row">
+      <span class="sheet-title" id="sheetBusName">—</span>
+      <div class="sheet-status" id="sheetStatus">
+        <span style="color:#4ade80;">●</span>
+        <span style="color:#4ade80;font-family:var(--font-display);font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">Live</span>
+      </div>
+    </div>
+
+    <!-- Route -->
+    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;font-family:var(--font-body);" id="sheetRoute">—</div>
+
+    <!-- Telemetry grid -->
+    <div class="telemetry-grid">
+
+      <div class="telemetry-item">
+        <span class="telemetry-label">Speed</span>
+        <span class="telemetry-value accent" id="sheetSpeed">— km/h</span>
+      </div>
+
+      <div class="telemetry-item">
+        <span class="telemetry-label">Heading</span>
+        <span class="telemetry-value" id="sheetHeading">—</span>
+      </div>
+
+      <div class="telemetry-item">
+        <span class="telemetry-label">Driver</span>
+        <span class="telemetry-value muted" id="sheetDriver">—</span>
+      </div>
+
+      <div class="telemetry-item">
+        <span class="telemetry-label">Type</span>
+        <span class="telemetry-value muted" id="sheetType">—</span>
+      </div>
+
+      <div class="telemetry-item" style="grid-column:span 2;">
+        <span class="telemetry-label">Last Updated</span>
+        <span class="telemetry-value green" id="lastSeenText">—</span>
+      </div>
+
+    </div>
+
+    <!-- Coordinates -->
+    <div class="coords-row">
+      <span class="coords-label">GPS</span>
+      <span class="coords-value" id="sheetCoordsValue">—</span>
+    </div>
+
+    <!-- Footer row -->
+    <div class="last-updated-row">
+      <span class="last-updated-text">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5;">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Updates every ping
+      </span>
+      <button class="reconnect-btn" onclick="subscribeGPS()">Reconnect</button>
+    </div>
+
+  </div>
+
+  <!-- ═══ OFFLINE OVERLAY ═══ -->
+  <div class="offline-overlay" id="offlineOverlay">
+    <div class="offline-icon">📡</div>
+    <div class="offline-title">Bus Offline</div>
+    <div class="offline-sub" id="offlineSub">
+      No GPS signal received in the last 90 seconds.<br/>
+      The bus may have stopped or lost connection.
+    </div>
+    <button onclick="window.location.reload()"
+      style="margin-top:16px;padding:10px 24px;border-radius:10px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:var(--gold);font-family:var(--font-display);font-size:0.7rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;cursor:pointer;transition:all 0.18s;"
+      onmouseover="this.style.background='rgba(201,168,76,0.2)'"
+      onmouseout="this.style.background='rgba(201,168,76,0.12)'">
+      Refresh
+    </button>
+    <a href="home.html"
+      style="font-size:0.75rem;color:var(--text-muted);text-decoration:none;margin-top:10px;">
+      ← Back to search
+    </a>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../lib/leaflet.js"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/user.auth.guard.js"></script>
+<script src="js/user.track.js"></script>
+</body>
+</html>

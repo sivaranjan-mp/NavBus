@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Camera Monitoring</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="../camera/css/camera.css"/>
+</head>
+<body>
+
+<!-- ═══ ACCESS DENIED SCREEN (shown briefly during auth check) ═══ -->
+<div class="cam-access-screen" id="camAccessScreen">
+  <div class="cam-access-icon">🔐</div>
+  <div class="cam-access-title">Verifying Access…</div>
+  <div class="cam-access-sub">Checking admin credentials…</div>
+</div>
+
+<!-- ═══ MAIN SHELL (hidden until auth confirmed) ═══ -->
+<div class="cam-shell" id="camShell" style="display:none;">
+
+  <!-- ═══ LEFT SIDEBAR ═══ -->
+  <aside class="cam-sidebar" id="camSidebar">
+
+    <!-- Header -->
+    <div class="cam-sidebar-header">
+      <a href="dashboard.html" class="cam-logo">
+        <svg width="28" height="18" viewBox="0 0 60 32" fill="none">
+          <rect x="2"  y="5"  width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+          <rect x="47" y="9"  width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.4"/>
+        </svg>
+        <div>
+          <span class="cam-logo-name">NAVBUS</span>
+          <span class="cam-logo-sub">Camera Monitor</span>
+        </div>
+      </a>
+      <div class="cam-rec-badge">
+        <div class="cam-rec-dot"></div>
+        <span class="cam-rec-text">Rec</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="cam-sidebar-search">
+      <svg class="cam-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="camBusSearch" class="cam-search-input" placeholder="Search bus plate…"/>
+    </div>
+
+    <!-- Section: Available cameras -->
+    <div class="cam-sidebar-section">Active Fleet</div>
+
+    <!-- Bus list -->
+    <div class="cam-bus-list" id="camBusList">
+      <!-- Skeleton -->
+      <div id="camSidebarSkeleton" style="padding:4px 0;">
+        ${[1,2,3,4,5].map(() => `
+          <div style="display:flex;align-items:center;gap:9px;padding:10px 8px;margin-bottom:2px;">
+            <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.1);"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+              <div style="height:11px;width:65%;border-radius:3px;background:linear-gradient(90deg,rgba(201,168,76,0.05) 0%,rgba(201,168,76,0.1) 50%,rgba(201,168,76,0.05) 100%);background-size:300px;animation:shimmer 1.5s infinite;"></div>
+              <div style="height:9px;width:40%;border-radius:3px;background:rgba(201,168,76,0.05);"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="cam-sidebar-footer">
+      <a href="dashboard.html" class="cam-back-link">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Dashboard
+      </a>
+      <div class="cam-admin-badge">
+        <div class="cam-admin-avatar" id="camAdminAvatar">AD</div>
+        <span class="cam-admin-name" id="camAdminName">Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="cam-sidebar-overlay" id="camSidebarOverlay"></div>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="cam-main">
+
+    <!-- Top bar -->
+    <div class="cam-topbar" id="camTopbar">
+      <div class="cam-topbar-left">
+        <!-- Mobile menu -->
+        <button class="cam-menu-btn" id="camMenuBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <!-- Bus info -->
+        <div class="cam-topbar-bus" id="camTopbarBus" style="display:none;">
+          <span class="cam-topbar-plate" id="topbarPlate">—</span>
+          <div class="cam-topbar-sep"></div>
+          <span class="cam-topbar-route" id="topbarRoute">—</span>
+        </div>
+
+        <!-- Placeholder -->
+        <div id="topbarPlaceholder" style="font-family:'Barlow Condensed',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:rgba(201,168,76,0.35);">
+          SELECT A BUS TO MONITOR
+        </div>
+
+        <!-- Camera count -->
+        <div class="cam-count-chip" id="camCountChip" style="display:none;">
+          <span class="cam-count-num" id="camCountNum">0</span>
+          <span class="cam-count-label">Cameras</span>
+        </div>
+      </div>
+
+      <div class="cam-topbar-right">
+        <!-- Layout group -->
+        <div class="cam-layout-group" id="camLayoutGroup" style="display:none;">
+          <button class="cam-layout-btn active" data-layout="2x2" data-tip="2×2 Grid">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/>
+              <rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>
+            </svg>
+          </button>
+          <button class="cam-layout-btn" data-layout="1-3" data-tip="1 + 3">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="10" height="18"/><rect x="15" y="3" width="6" height="8"/>
+              <rect x="15" y="13" width="6" height="8"/>
+            </svg>
+          </button>
+          <button class="cam-layout-btn" data-layout="row" data-tip="Row">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="7" width="4" height="10"/><rect x="9" y="7" width="4" height="10"/>
+              <rect x="15" y="7" width="4" height="10"/><rect x="21" y="7" width="0" height="10"/>
+            </svg>
+          </button>
+          <button class="cam-layout-btn" data-layout="1x1" data-tip="Focus">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Snap all -->
+        <button class="cam-ctrl" id="btnSnapAll" data-tip="Snapshot All" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+
+        <!-- Reload all -->
+        <button class="cam-ctrl" id="btnReloadAll" data-tip="Reload All Streams" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-.02-9.5"/>
+          </svg>
+        </button>
+
+        <!-- Clock -->
+        <div class="cam-clock">
+          <div class="cam-clock-dot"></div>
+          <span id="camClock">00:00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid area -->
+    <div class="cam-grid-area" id="camGridArea">
+
+      <!-- Landing state -->
+      <div class="cam-landing" id="camLanding">
+        <div class="cam-landing-icon">📹</div>
+        <div class="cam-landing-title">Camera Monitoring</div>
+        <div class="cam-landing-sub">
+          Select a bus from the fleet list to view its live camera feeds.
+          Cameras are linked via device_id automatically.
+        </div>
+        <div class="cam-landing-stats">
+          <div class="cam-landing-stat">
+            <span class="cam-landing-stat-value" id="landingTotalBuses">—</span>
+            <span class="cam-landing-stat-label">Total Buses</span>
+          </div>
+          <div class="cam-landing-stat">
+            <span class="cam-landing-stat-value" id="landingCamBuses">—</span>
+            <span class="cam-landing-stat-label">With Cameras</span>
+          </div>
+          <div class="cam-landing-stat">
+            <span class="cam-landing-stat-value" id="landingTotalCams">—</span>
+            <span class="cam-landing-stat-label">Camera URLs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Camera grid container (shown when bus selected) -->
+      <div id="camGridContainer" style="width:100%;height:100%;display:none;"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FULLSCREEN MODAL ═══ -->
+<div class="cam-fullscreen-modal" id="camFullscreenModal">
+  <div class="cam-fullscreen-bar">
+    <div class="cam-fullscreen-title">
+      <span class="cam-fullscreen-plate" id="camFullscreenPlate">—</span>
+      <span class="cam-fullscreen-pos" id="camFullscreenPos">FRONT</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="cam-rec-badge" style="margin-right:4px;">
+        <div class="cam-rec-dot"></div>
+        <span class="cam-rec-text">Live</span>
+      </div>
+      <span id="camFullscreenTime" style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:rgba(201,168,76,0.5);"></span>
+      <button class="cam-fullscreen-close" id="camFullscreenClose">✕</button>
+    </div>
+  </div>
+  <div class="cam-fullscreen-content" id="camFullscreenContent"></div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+
+<!-- Camera modules -->
+<script src="../camera/js/camera.loader.js"></script>
+<script src="../camera/js/camera.player.js"></script>
+<script src="../camera/js/camera.snapshot.js"></script>
+<script src="../camera/js/camera.status.js"></script>
+<script src="../camera/js/camera.grid.js"></script>
+
+<script>
+/* ============================================================
+   NavBus Camera Monitoring — Page Controller
+   Admin-only: secure auth check → load fleet → camera monitor
+   ============================================================ */
+
+let _allBuses       = [];
+let _selectedBusId  = null;
+
+// ── SECURE AUTH CHECK (admin only) ───────────────────────────
+(async () => {
+  const accessScreen = document.getElementById('camAccessScreen');
+  const shell        = document.getElementById('camShell');
+
+  try {
+    // 1. Get session
+    const { data: { session }, error: sessErr } = await NAVBUS_DB.auth.getSession();
+
+    if (sessErr || !session) {
+      _showAccessDenied('Not authenticated. Please log in.');
+      setTimeout(() => window.location.replace('../auth/login.html'), 2000);
+      return;
+    }
+
+    // 2. Verify admin role (double-check DB, not just metadata)
+    const { data: profile, error: profileErr } = await NAVBUS_DB
+      .from('profiles')
+      .select('id, name, role')
+      .eq('id', session.user.id)
+      .single();
+
+    const role = profile?.role || session.user?.user_metadata?.role;
+
+    if (profileErr || role !== 'admin') {
+      _showAccessDenied('Access denied. Admin privileges required.');
+      setTimeout(() => window.location.replace('../user/home.html'), 2500);
+      return;
+    }
+
+    // 3. Auth confirmed — show the app
+    const name = profile?.name || session.user.user_metadata?.name || 'Admin';
+    document.getElementById('camAdminAvatar').textContent = name.slice(0, 2).toUpperCase();
+    document.getElementById('camAdminName').textContent   = name.split(' ')[0];
+
+    accessScreen.style.display = 'none';
+    shell.style.display        = 'flex';
+
+    // 4. Boot the app
+    await _boot();
+
+  } catch (err) {
+    console.error('[CameraMonitor] Auth error:', err);
+    _showAccessDenied('Authentication error. Redirecting…');
+    setTimeout(() => window.location.replace('../auth/login.html'), 2000);
+  }
+})();
+
+// ── Boot after auth ───────────────────────────────────────────
+async function _boot() {
+  _startClock();
+  CameraGrid.startCellTimestamps();
+  await _loadBuses();
+  _wireControls();
+}
+
+// ── Load all buses ────────────────────────────────────────────
+async function _loadBuses() {
+  const { buses, error } = await CameraLoader.loadBusesWithCameras();
+
+  document.getElementById('camSidebarSkeleton')?.remove();
+
+  if (error || buses.length === 0) {
+    document.getElementById('camBusList').innerHTML = `
+      <div class="cam-sidebar-empty">
+        <div class="cam-sidebar-empty-icon">🚌</div>
+        <div class="cam-sidebar-empty-text">
+          ${error ? 'Failed to load fleet: ' + error : 'No buses registered yet.'}
+        </div>
+      </div>`;
+    return;
+  }
+
+  _allBuses = buses;
+
+  // Landing stats
+  const withCams  = buses.filter(b => CameraLoader.countCameras(b) > 0).length;
+  const totalCams = buses.reduce((s, b) => s + CameraLoader.countCameras(b), 0);
+  _setEl('landingTotalBuses', buses.length);
+  _setEl('landingCamBuses',   withCams);
+  _setEl('landingTotalCams',  totalCams);
+
+  _renderBusList(buses);
+}
+
+// ── Render sidebar bus list ───────────────────────────────────
+function _renderBusList(buses) {
+  const listEl = document.getElementById('camBusList');
+  if (!listEl) return;
+
+  // Sort: buses with cameras first, then by plate
+  const sorted = [...buses].sort((a, b) => {
+    const aC = CameraLoader.countCameras(a);
+    const bC = CameraLoader.countCameras(b);
+    if (aC > 0 && bC === 0) return -1;
+    if (aC === 0 && bC > 0) return  1;
+    return a.number_plate.localeCompare(b.number_plate);
+  });
+
+  if (sorted.length === 0) {
+    listEl.innerHTML = `
+      <div class="cam-sidebar-empty">
+        <div class="cam-sidebar-empty-icon">🔍</div>
+        <div class="cam-sidebar-empty-text">No buses match your search.</div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = sorted.map(bus => _buildBusRow(bus)).join('');
+
+  // Click listeners
+  listEl.querySelectorAll('.cam-bus-row').forEach(row => {
+    row.addEventListener('click', () => {
+      selectBus(row.dataset.busId);
+      // Close sidebar on mobile
+      if (window.innerWidth < 960) {
+        document.getElementById('camSidebar')?.classList.remove('open');
+        document.getElementById('camSidebarOverlay')?.classList.remove('open');
+      }
+    });
+  });
+}
+
+// ── Build bus row HTML ────────────────────────────────────────
+function _buildBusRow(bus) {
+  const camCount = CameraLoader.countCameras(bus);
+  const isActive = _selectedBusId === bus.id;
+
+  // 4 position dots
+  const dots = ['camera_url_front','camera_url_rear','camera_url_cabin','camera_url_driver']
+    .map(k => `<div class="cam-dot-indicator ${bus[k] ? 'has-cam' : ''}"></div>`)
+    .join('');
+
+  return `
+    <div class="cam-bus-row ${isActive ? 'active' : ''}"
+      data-bus-id="${bus.id}"
+      id="busrow-${bus.id}">
+      <div class="cam-bus-thumb">
+        🚌
+        <div class="cam-bus-cam-count ${camCount === 0 ? 'zero' : ''}">${camCount}</div>
+      </div>
+      <div class="cam-bus-info">
+        <span class="cam-bus-plate">${_esc(bus.number_plate)}</span>
+        <span class="cam-bus-name">${_esc(bus.routes?.route_number ? bus.routes.route_number + ' · ' : '')}${_esc(bus.bus_name || bus.bus_model || 'No name')}</span>
+      </div>
+      <div class="cam-dots">${dots}</div>
+    </div>`;
+}
+
+// ── Select a bus to monitor ───────────────────────────────────
+async function selectBus(busId) {
+  if (_selectedBusId === busId) return;
+  _selectedBusId = busId;
+
+  // Highlight row
+  document.querySelectorAll('.cam-bus-row').forEach(r => r.classList.remove('active'));
+  document.getElementById(`busrow-${busId}`)?.classList.add('active');
+
+  // Show loading in grid area
+  const gridArea    = document.getElementById('camGridArea');
+  const gridCont    = document.getElementById('camGridContainer');
+  const landingEl   = document.getElementById('camLanding');
+  const topbarBus   = document.getElementById('camTopbarBus');
+  const topbarPH    = document.getElementById('topbarPlaceholder');
+  const layoutGroup = document.getElementById('camLayoutGroup');
+  const snapBtn     = document.getElementById('btnSnapAll');
+  const reloadBtn   = document.getElementById('btnReloadAll');
+  const countChip   = document.getElementById('camCountChip');
+
+  landingEl.style.display  = 'none';
+  gridCont.style.display   = 'block';
+  topbarBus.style.display  = 'flex';
+  topbarPH.style.display   = 'none';
+
+  gridCont.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px;">
+      <div style="width:32px;height:32px;border:2px solid rgba(201,168,76,0.15);border-top-color:#c9a84c;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:rgba(201,168,76,0.35);">Loading Camera Feeds…</div>
+    </div>`;
+
+  // Load bus data (from cache if available)
+  const { bus, error } = await CameraLoader.loadBusById(busId);
+
+  if (error || !bus) {
+    gridCont.innerHTML = `
+      <div style="text-align:center;padding:60px;color:#6e6354;">
+        <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:0.14em;text-transform:uppercase;">Failed to load bus data</div>
+      </div>`;
+    return;
+  }
+
+  // Update topbar
+  _setEl('topbarPlate', bus.number_plate);
+  _setEl('topbarRoute', bus.routes
+    ? `${bus.routes.route_number} — ${bus.routes.name}`
+    : (bus.bus_name || 'No route assigned'));
+
+  const camCount = CameraLoader.countCameras(bus);
+  _setEl('camCountNum', camCount);
+  countChip.style.display  = 'flex';
+  layoutGroup.style.display = camCount > 1 ? 'flex' : 'none';
+  snapBtn.style.display    = camCount > 0 ? 'flex' : 'none';
+  reloadBtn.style.display  = camCount > 0 ? 'flex' : 'none';
+
+  // Render camera grid
+  CameraGrid.render(bus, 'camGridContainer', '2x2');
+
+  // Reset layout buttons
+  document.querySelectorAll('.cam-layout-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.layout === '2x2');
+  });
+}
+
+// ── Wire all controls ─────────────────────────────────────────
+function _wireControls() {
+  // Sidebar toggle (mobile)
+  const sidebar = document.getElementById('camSidebar');
+  const overlay = document.getElementById('camSidebarOverlay');
+
+  document.getElementById('camMenuBtn')?.addEventListener('click', () => {
+    sidebar?.classList.add('open');
+    overlay?.classList.add('open');
+  });
+  overlay?.addEventListener('click', () => {
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('open');
+  });
+
+  // Layout buttons
+  document.querySelectorAll('.cam-layout-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cam-layout-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      CameraGrid.setLayout(btn.dataset.layout);
+    });
+  });
+
+  // Snapshot all cameras
+  document.getElementById('btnSnapAll')?.addEventListener('click', async () => {
+    const bus = _allBuses.find(b => b.id === _selectedBusId);
+    if (!bus) return;
+
+    document.querySelectorAll('.cam-cell').forEach(cell => {
+      const pos = cell.dataset.position;
+      const cam = bus.cameras?.find(c => c.position === pos);
+      if (cam) CameraSnapshot.capture(cell, bus.number_plate, pos);
+    });
+  });
+
+  // Reload all streams
+  document.getElementById('btnReloadAll')?.addEventListener('click', async () => {
+    if (!_selectedBusId) return;
+    const bus = _allBuses.find(b => b.id === _selectedBusId);
+    if (!bus) return;
+    // Re-render entire grid
+    CameraGrid.render(bus, 'camGridContainer', _getCurrentLayout());
+  });
+
+  // Fullscreen close
+  document.getElementById('camFullscreenClose')?.addEventListener('click', () => {
+    CameraGrid.closeFullscreen();
+  });
+
+  // Fullscreen clock update
+  setInterval(() => {
+    const el = document.getElementById('camFullscreenTime');
+    if (el) el.textContent = new Date().toLocaleTimeString('en-IN');
+  }, 1000);
+
+  // Search
+  document.getElementById('camBusSearch')?.addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    const filtered = q
+      ? _allBuses.filter(b =>
+          b.number_plate?.toLowerCase().includes(q) ||
+          b.bus_name?.toLowerCase().includes(q)     ||
+          b.device_id?.toLowerCase().includes(q)    ||
+          b.routes?.route_number?.toLowerCase().includes(q)
+        )
+      : _allBuses;
+    _renderBusList(filtered);
+  });
+
+  // Keyboard: Escape closes fullscreen
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') CameraGrid.closeFullscreen();
+  });
+}
+
+// ── Access denied screen ──────────────────────────────────────
+function _showAccessDenied(msg) {
+  const screen = document.getElementById('camAccessScreen');
+  if (!screen) return;
+  screen.querySelector('.cam-access-icon').textContent = '🚫';
+  screen.querySelector('.cam-access-title').textContent = 'Access Denied';
+  screen.querySelector('.cam-access-sub').textContent   = msg;
+}
+
+// ── Live clock ────────────────────────────────────────────────
+function _startClock() {
+  const tick = () => {
+    const t = new Date().toTimeString().slice(0, 8);
+    _setEl('camClock', t);
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function _getCurrentLayout() {
+  const active = document.querySelector('.cam-layout-btn.active');
+  return active?.dataset.layout || '2x2';
+}
+
+function _setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val ?? '—';
+}
+
+function _esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// shimmer keyframe for skeleton
+const shimmerStyle = document.createElement('style');
+shimmerStyle.textContent = `
+  @keyframes shimmer { from { background-position: -300px 0; } to { background-position: 300px 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+`;
+document.head.appendChild(shimmerStyle);
+</script>
+</body>
+</html>

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Routes Management</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/admin.layout.css"/>
+  <style>
+    /* ── Routes-specific styles ── */
+    .routes-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+    .stat-card { background:var(--bg-secondary); border:1px solid var(--gold-border); border-radius:14px; padding:16px 18px; display:flex; align-items:center; gap:14px; }
+    .stat-icon { font-size:1.4rem; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .stat-icon.gold { background:rgba(201,168,76,0.1); }
+    .stat-icon.success { background:rgba(74,222,128,0.08); }
+    .stat-icon.warning { background:rgba(251,191,36,0.08); }
+    .stat-icon.muted { background:rgba(148,163,184,0.08); }
+    .stat-value { font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:var(--gold); line-height:1; }
+    .stat-label { font-size:0.68rem; color:var(--text-muted); margin-top:3px; }
+
+    /* toolbar */
+    .table-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .toolbar-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .search-wrap { position:relative; }
+    .search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
+    .search-input { background:var(--bg-secondary); border:1px solid var(--gold-border); border-radius:9px; padding:8px 12px 8px 32px; font-size:0.8rem; color:var(--text-primary); width:220px; outline:none; transition:border-color 0.2s; }
+    .search-input:focus { border-color:var(--gold); }
+    .filter-select { background:var(--bg-secondary); border:1px solid var(--gold-border); border-radius:9px; padding:8px 12px; font-size:0.78rem; color:var(--text-secondary); outline:none; cursor:pointer; }
+    .results-count { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); }
+
+    /* table */
+    .table-card { background:var(--bg-secondary); border:1px solid var(--gold-border); border-radius:16px; overflow:hidden; }
+    .table-responsive { overflow-x:auto; }
+    .admin-table { width:100%; border-collapse:collapse; }
+    .admin-table thead tr { border-bottom:1px solid var(--gold-border); }
+    .admin-table th { padding:12px 16px; text-align:left; font-family:var(--font-display); font-size:0.58rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:rgba(201,168,76,0.6); white-space:nowrap; }
+    .admin-table td { padding:14px 16px; font-size:0.82rem; color:var(--text-secondary); border-bottom:1px solid rgba(201,168,76,0.05); vertical-align:middle; }
+    .admin-table tbody tr:last-child td { border-bottom:none; }
+    .admin-table tbody tr:hover td { background:rgba(201,168,76,0.02); }
+
+    /* route number badge */
+    .route-num { display:inline-flex; align-items:center; justify-content:center; min-width:42px; padding:4px 10px; background:rgba(201,168,76,0.1); border:1px solid var(--gold-border); border-radius:7px; font-family:var(--font-mono); font-size:0.78rem; font-weight:700; color:var(--gold); letter-spacing:0.08em; }
+    .route-name-text { font-weight:500; color:var(--text-primary); font-size:0.83rem; }
+    .route-desc { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+
+    /* origin → destination */
+    .route-path { display:flex; align-items:center; gap:8px; }
+    .route-stop { font-size:0.78rem; color:var(--text-secondary); }
+    .route-arrow { color:var(--gold); opacity:0.5; font-size:0.7rem; }
+
+    /* distance / duration */
+    .meta-chip { display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted); }
+
+    /* status badge */
+    .status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-family:var(--font-display); font-size:0.58rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; }
+    .status-badge.active { background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); color:#4ade80; }
+    .status-badge.inactive { background:rgba(148,163,184,0.08); border:1px solid rgba(148,163,184,0.15); color:var(--text-muted); }
+    .status-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+    /* action buttons */
+    .action-btns { display:flex; gap:6px; }
+    .btn-icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; border:1px solid var(--gold-border); background:transparent; color:var(--text-muted); cursor:pointer; transition:all 0.18s; }
+    .btn-icon:hover { background:rgba(201,168,76,0.08); color:var(--gold); border-color:var(--gold); }
+    .btn-icon.danger:hover { background:rgba(248,113,113,0.08); color:var(--danger); border-color:rgba(248,113,113,0.3); }
+
+    /* stops count */
+    .stops-count { font-family:var(--font-mono); font-size:0.75rem; color:var(--text-muted); }
+
+    /* empty / loading */
+    .table-empty { padding:48px 20px; text-align:center; color:var(--text-muted); }
+    .table-empty-icon { font-size:2.5rem; margin-bottom:12px; opacity:0.4; }
+    .table-empty-title { font-family:var(--font-display); font-size:0.85rem; letter-spacing:0.1em; color:var(--text-secondary); margin-bottom:6px; }
+    .skeleton-row td { padding:14px 16px; }
+    .skeleton { height:14px; border-radius:6px; background:linear-gradient(90deg, rgba(201,168,76,0.05) 25%, rgba(201,168,76,0.1) 50%, rgba(201,168,76,0.05) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* pagination */
+    .table-footer { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-top:1px solid rgba(201,168,76,0.07); }
+    .pagination-info { font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); }
+    .pagination-controls { display:flex; gap:4px; }
+    .page-btn { min-width:30px; height:30px; padding:0 8px; border-radius:7px; border:1px solid var(--gold-border); background:transparent; color:var(--text-muted); font-size:0.75rem; cursor:pointer; transition:all 0.15s; }
+    .page-btn:hover, .page-btn.active { background:rgba(201,168,76,0.1); color:var(--gold); border-color:var(--gold); }
+
+    /* ── MODAL ── */
+    .modal-backdrop { display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); }
+    .modal-backdrop.open { display:flex; }
+    .modal-box { position:relative; background:var(--bg-secondary); border:1px solid var(--gold-border); border-radius:18px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:modalIn 0.25s ease both; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+    .modal-top-bar { height:2px; background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 0; }
+    .modal-title { font-family:var(--font-display); font-size:0.95rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-primary); }
+    .modal-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--gold-border); background:transparent; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+    .modal-close:hover { color:var(--gold); border-color:var(--gold); }
+    .modal-body { padding:20px 24px 24px; }
+
+    /* form */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-grid.full { grid-template-columns:1fr; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group.span2 { grid-column:span 2; }
+    .form-label { font-family:var(--font-display); font-size:0.6rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:rgba(201,168,76,0.7); }
+    .form-input, .form-textarea { background:var(--bg-primary); border:1px solid var(--gold-border); border-radius:9px; padding:10px 12px; font-size:0.82rem; color:var(--text-primary); outline:none; transition:border-color 0.2s; font-family:inherit; width:100%; box-sizing:border-box; }
+    .form-input:focus, .form-textarea:focus { border-color:var(--gold); }
+    .form-textarea { resize:vertical; min-height:70px; }
+    .form-hint { font-size:0.68rem; color:var(--text-muted); }
+    .form-row-toggle { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--bg-primary); border:1px solid var(--gold-border); border-radius:9px; }
+    .toggle-label { font-size:0.8rem; color:var(--text-secondary); flex:1; }
+    .toggle { position:relative; width:36px; height:20px; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:rgba(201,168,76,0.15); border-radius:999px; cursor:pointer; transition:0.2s; }
+    .toggle-slider:before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:var(--text-muted); border-radius:50%; transition:0.2s; }
+    .toggle input:checked + .toggle-slider { background:rgba(74,222,128,0.25); }
+    .toggle input:checked + .toggle-slider:before { transform:translateX(16px); background:#4ade80; }
+    .modal-footer { display:flex; gap:10px; padding:0 24px 24px; }
+    .modal-footer .btn { flex:1; }
+
+    /* delete modal */
+    .delete-modal-box { max-width:380px; }
+
+    /* alert */
+    .form-alert { padding:10px 14px; border-radius:9px; font-size:0.8rem; margin-bottom:14px; display:none; }
+    .form-alert.error { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); color:var(--danger); }
+    .form-alert.success { background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); color:#4ade80; }
+  </style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+            <img src="../../assets/logo.png" alt="NavBus" class="sidebar-logo-img"/>
+    </a>
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="buses.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Fleet / Buses
+      </a>
+      <a href="routes.html" class="sidebar-link active">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        Routes
+      </a>
+      <a href="drivers.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Drivers
+      </a>
+      <span class="sidebar-section-label">Monitoring</span>
+      <a href="alerts.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Alerts
+      </a>
+      <a href="reports.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Reports
+      </a>
+      <span class="sidebar-section-label">System</span>
+      <a href="users.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Users
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-status-bar">
+        <div class="sidebar-live-dot"></div>
+        <span class="sidebar-live-label">All Systems Online</span>
+      </div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">AD</div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-user-name" id="sidebarUserName">Administrator</span>
+          <span class="sidebar-user-role">Admin</span>
+          <span class="sidebar-user-email" id="sidebarUserEmail" style="font-size:0.6rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:block;"></span>
+        </div>
+        <button class="sidebar-logout-btn" id="logoutBtn" title="Sign out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-body">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <button class="header-menu-btn" id="headerMenuBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="header-breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-item">Dashboard</a>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item current">Routes</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:livePulse 1.8s infinite;flex-shrink:0;"></div>
+          <span id="headerClock">00:00:00</span>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="openAddModal()">+ Add Route</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title"><span class="page-title-accent"></span>Routes Management</h1>
+          <p class="page-subtitle">Create and manage bus routes, stops, and schedules</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-md" onclick="loadRoutes()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.02-9.5"/></svg>
+            Refresh
+          </button>
+          <button class="btn btn-gold btn-md" onclick="openAddModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Route
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="routes-stats">
+        <div class="stat-card">
+          <div class="stat-icon gold">🗺️</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-label">Total Routes</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon success">✅</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statActive">—</div>
+            <div class="stat-label">Active</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon muted">⭘</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statInactive">—</div>
+            <div class="stat-label">Inactive</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon warning">📍</div>
+          <div class="stat-info">
+            <div class="stat-value" id="statStops">—</div>
+            <div class="stat-label">Total Stops</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrap">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="routeSearch" class="search-input" placeholder="Search route, origin, destination…"/>
+          </div>
+          <select id="statusFilter" class="filter-select">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <span class="results-count" id="resultsCount">Loading…</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Path</th>
+                <th>Distance / Time</th>
+                <th>Stops</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="routeTableBody">
+              <!-- skeleton -->
+              <tr class="skeleton-row"><td><div class="skeleton" style="width:80px"></div></td><td><div class="skeleton" style="width:160px"></div></td><td><div class="skeleton" style="width:100px"></div></td><td><div class="skeleton" style="width:40px"></div></td><td><div class="skeleton" style="width:60px"></div></td><td><div class="skeleton" style="width:60px"></div></td></tr>
+              <tr class="skeleton-row"><td><div class="skeleton" style="width:60px"></div></td><td><div class="skeleton" style="width:140px"></div></td><td><div class="skeleton" style="width:90px"></div></td><td><div class="skeleton" style="width:30px"></div></td><td><div class="skeleton" style="width:60px"></div></td><td><div class="skeleton" style="width:60px"></div></td></tr>
+              <tr class="skeleton-row"><td><div class="skeleton" style="width:70px"></div></td><td><div class="skeleton" style="width:180px"></div></td><td><div class="skeleton" style="width:110px"></div></td><td><div class="skeleton" style="width:40px"></div></td><td><div class="skeleton" style="width:60px"></div></td><td><div class="skeleton" style="width:60px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer" id="tableFooter" style="display:none;">
+          <span class="pagination-info" id="paginationInfo"></span>
+          <div class="pagination-controls" id="paginationControls"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══ ADD / EDIT ROUTE MODAL ═══ -->
+<div class="modal-backdrop" id="routeModal">
+  <div class="modal-box">
+    <div class="modal-top-bar"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Add Route</span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-alert" id="formAlert"></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Route Number *</label>
+          <input type="text" id="fRouteNumber" class="form-input" placeholder="e.g. 12A" maxlength="10"/>
+          <span class="form-hint">Short public-facing code</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Route Name *</label>
+          <input type="text" id="fRouteName" class="form-input" placeholder="e.g. Central to Airport"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Origin *</label>
+          <input type="text" id="fOrigin" class="form-input" placeholder="Starting stop / area"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destination *</label>
+          <input type="text" id="fDestination" class="form-input" placeholder="Ending stop / area"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Distance (km)</label>
+          <input type="number" id="fDistance" class="form-input" placeholder="e.g. 24.5" step="0.1" min="0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Est. Duration (min)</label>
+          <input type="number" id="fDuration" class="form-input" placeholder="e.g. 45" min="0"/>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Description</label>
+          <textarea id="fDescription" class="form-textarea" placeholder="Optional route description…"></textarea>
+        </div>
+        <div class="form-group span2">
+          <div class="form-row-toggle">
+            <span class="toggle-label">Route is Active</span>
+            <label class="toggle">
+              <input type="checkbox" id="fIsActive" checked/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-md" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold btn-md" id="saveRouteBtn" onclick="saveRoute()">Save Route</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DELETE CONFIRM MODAL ═══ -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal-box delete-modal-box">
+    <div class="modal-top-bar" style="background:linear-gradient(90deg,transparent,#f87171,transparent);"></div>
+    <div class="modal-body" style="padding:28px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;letter-spacing:0.1em;color:var(--text-primary);text-transform:uppercase;margin-bottom:8px;">Delete Route</h3>
+        <p style="font-size:0.82rem;color:var(--text-muted);line-height:1.6;">
+          You are about to delete route <strong id="deleteRouteName" style="color:var(--gold);font-family:var(--font-mono);"></strong>.<br/>
+          All associated stops will also be removed. This cannot be undone.
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-md" style="flex:1;" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger btn-md" style="flex:1;" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/admin.auth.guard.js"></script>
+<script src="js/admin.layout.js"></script>
+<script>
+/* ============================================================
+   NavBus — Admin Routes Management
+   ============================================================ */
+
+let ALL_ROUTES   = [];
+let CURRENT_PAGE = 1;
+const PAGE_SIZE  = 15;
+let EDIT_ID      = null;
+let DELETE_ID    = null;
+
+// ── Boot ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadRoutes();
+  initSearch();
+});
+
+// ── Load routes + stop counts ─────────────────────────────────
+async function loadRoutes() {
+  const { data: routes, error } = await NAVBUS_DB
+    .from('routes')
+    .select('id, route_number, name, description, origin, destination, total_distance_km, estimated_duration_min, is_active, created_at')
+    .order('route_number');
+
+  if (error) {
+    showTableError(error.message);
+    return;
+  }
+
+  // fetch stop counts per route
+  const { data: stops } = await NAVBUS_DB
+    .from('stops')
+    .select('route_id')
+    .eq('is_active', true);
+
+  const stopCounts = {};
+  (stops || []).forEach(s => {
+    stopCounts[s.route_id] = (stopCounts[s.route_id] || 0) + 1;
+  });
+
+  ALL_ROUTES = (routes || []).map(r => ({ ...r, stopCount: stopCounts[r.id] || 0 }));
+  CURRENT_PAGE = 1;
+  renderAll();
+  updateStats();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const total    = ALL_ROUTES.length;
+  const active   = ALL_ROUTES.filter(r => r.is_active).length;
+  const inactive = total - active;
+  const stops    = ALL_ROUTES.reduce((s, r) => s + r.stopCount, 0);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('statTotal',    total);
+  set('statActive',   active);
+  set('statInactive', inactive);
+  set('statStops',    stops);
+}
+
+// ── Filter + render ───────────────────────────────────────────
+function renderAll() {
+  const q      = (document.getElementById('routeSearch')?.value || '').toLowerCase();
+  const filter = document.getElementById('statusFilter')?.value || 'all';
+
+  let rows = ALL_ROUTES.filter(r => {
+    const matchQ = !q ||
+      r.route_number.toLowerCase().includes(q) ||
+      r.name.toLowerCase().includes(q) ||
+      r.origin.toLowerCase().includes(q) ||
+      r.destination.toLowerCase().includes(q);
+    const matchF = filter === 'all' ||
+      (filter === 'active' && r.is_active) ||
+      (filter === 'inactive' && !r.is_active);
+    return matchQ && matchF;
+  });
+
+  const total = rows.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (CURRENT_PAGE > pages) CURRENT_PAGE = 1;
+
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('resultsCount').textContent =
+    `${total} route${total !== 1 ? 's' : ''}`;
+
+  renderTable(slice);
+  renderPagination(total, pages);
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('routeTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="6">
+        <div class="table-empty">
+          <div class="table-empty-icon">🗺️</div>
+          <div class="table-empty-title">No Routes Found</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Try a different search or add a new route.</div>
+        </div>
+      </td></tr>`;
+    document.getElementById('tableFooter').style.display = 'none';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="route-num">${escHtml(r.route_number)}</span>
+          <div>
+            <div class="route-name-text">${escHtml(r.name)}</div>
+            ${r.description ? `<div class="route-desc">${escHtml(r.description)}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="route-path">
+          <span class="route-stop">${escHtml(r.origin)}</span>
+          <span class="route-arrow">→</span>
+          <span class="route-stop">${escHtml(r.destination)}</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          ${r.total_distance_km ? `<span class="meta-chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${r.total_distance_km} km</span>` : '<span class="meta-chip" style="opacity:0.4;">— km</span>'}
+          ${r.estimated_duration_min ? `<span class="meta-chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>~${r.estimated_duration_min} min</span>` : '<span class="meta-chip" style="opacity:0.4;">— min</span>'}
+        </div>
+      </td>
+      <td><span class="stops-count">${r.stopCount} stop${r.stopCount !== 1 ? 's' : ''}</span></td>
+      <td>
+        <span class="status-badge ${r.is_active ? 'active' : 'inactive'}">
+          <span class="status-dot"></span>
+          ${r.is_active ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-icon" title="Edit" onclick="openEditModal('${r.id}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon danger" title="Delete" onclick="openDeleteModal('${r.id}', '${escHtml(r.route_number)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('tableFooter').style.display = 'flex';
+}
+
+function renderPagination(total, pages) {
+  const info  = document.getElementById('paginationInfo');
+  const ctrl  = document.getElementById('paginationControls');
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE + 1;
+  const end   = Math.min(CURRENT_PAGE * PAGE_SIZE, total);
+  info.textContent = total ? `${start}–${end} of ${total}` : '';
+
+  if (pages <= 1) { ctrl.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="page-btn${i === CURRENT_PAGE ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  ctrl.innerHTML = html;
+}
+
+function goPage(n) { CURRENT_PAGE = n; renderAll(); }
+
+// ── Search & filter ───────────────────────────────────────────
+function initSearch() {
+  document.getElementById('routeSearch')?.addEventListener('input', () => { CURRENT_PAGE = 1; renderAll(); });
+  document.getElementById('statusFilter')?.addEventListener('change', () => { CURRENT_PAGE = 1; renderAll(); });
+}
+
+// ── ADD MODAL ─────────────────────────────────────────────────
+function openAddModal() {
+  EDIT_ID = null;
+  document.getElementById('modalTitle').textContent = 'Add Route';
+  document.getElementById('saveRouteBtn').textContent = 'Save Route';
+  clearForm();
+  document.getElementById('routeModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const r = ALL_ROUTES.find(x => x.id === id);
+  if (!r) return;
+  EDIT_ID = id;
+  document.getElementById('modalTitle').textContent = 'Edit Route';
+  document.getElementById('saveRouteBtn').textContent = 'Update Route';
+  document.getElementById('fRouteNumber').value  = r.route_number || '';
+  document.getElementById('fRouteName').value    = r.name || '';
+  document.getElementById('fOrigin').value       = r.origin || '';
+  document.getElementById('fDestination').value  = r.destination || '';
+  document.getElementById('fDistance').value     = r.total_distance_km || '';
+  document.getElementById('fDuration').value     = r.estimated_duration_min || '';
+  document.getElementById('fDescription').value  = r.description || '';
+  document.getElementById('fIsActive').checked   = r.is_active;
+  hideAlert();
+  document.getElementById('routeModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('routeModal').classList.remove('open');
+  EDIT_ID = null;
+}
+
+function clearForm() {
+  ['fRouteNumber','fRouteName','fOrigin','fDestination','fDistance','fDuration','fDescription'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('fIsActive').checked = true;
+  hideAlert();
+}
+
+// ── SAVE ──────────────────────────────────────────────────────
+async function saveRoute() {
+  const routeNumber = document.getElementById('fRouteNumber').value.trim().toUpperCase();
+  const name        = document.getElementById('fRouteName').value.trim();
+  const origin      = document.getElementById('fOrigin').value.trim();
+  const destination = document.getElementById('fDestination').value.trim();
+  const distance    = parseFloat(document.getElementById('fDistance').value) || null;
+  const duration    = parseInt(document.getElementById('fDuration').value)   || null;
+  const description = document.getElementById('fDescription').value.trim()  || null;
+  const isActive    = document.getElementById('fIsActive').checked;
+
+  if (!routeNumber || !name || !origin || !destination) {
+    showAlert('error', 'Route Number, Name, Origin and Destination are required.');
+    return;
+  }
+
+  const btn = document.getElementById('saveRouteBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const payload = { route_number: routeNumber, name, origin, destination, description, total_distance_km: distance, estimated_duration_min: duration, is_active: isActive };
+
+  let error;
+  if (EDIT_ID) {
+    ({ error } = await NAVBUS_DB.from('routes').update(payload).eq('id', EDIT_ID));
+  } else {
+    ({ error } = await NAVBUS_DB.from('routes').insert(payload));
+  }
+
+  btn.disabled = false;
+  btn.textContent = EDIT_ID ? 'Update Route' : 'Save Route';
+
+  if (error) {
+    if (error.message?.includes('unique') || error.code === '23505') {
+      showAlert('error', `Route number "${routeNumber}" already exists.`);
+    } else {
+      showAlert('error', error.message || 'Failed to save route.');
+    }
+    return;
+  }
+
+  showAlert('success', EDIT_ID ? 'Route updated successfully!' : 'Route added successfully!');
+  setTimeout(() => { closeModal(); loadRoutes(); }, 900);
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+function openDeleteModal(id, routeNum) {
+  DELETE_ID = id;
+  document.getElementById('deleteRouteName').textContent = routeNum;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+  DELETE_ID = null;
+}
+
+async function confirmDelete() {
+  if (!DELETE_ID) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+
+  const { error } = await NAVBUS_DB.from('routes').delete().eq('id', DELETE_ID);
+
+  btn.disabled = false;
+  btn.textContent = 'Delete';
+
+  if (error) {
+    closeDeleteModal();
+    Toast.error(error.message || 'Failed to delete route.');
+    return;
+  }
+
+  closeDeleteModal();
+  Toast.success('Route deleted.');
+  loadRoutes();
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function showTableError(msg) {
+  document.getElementById('routeTableBody').innerHTML = `
+    <tr><td colspan="6">
+      <div class="table-empty">
+        <div class="table-empty-icon">⚠️</div>
+        <div class="table-empty-title">Failed to load routes</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">${escHtml(msg)}</div>
+      </div>
+    </td></tr>`;
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById('formAlert');
+  el.className = `form-alert ${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideAlert() {
+  const el = document.getElementById('formAlert');
+  el.style.display = 'none';
+}
+
+function escHtml(str) {
+  if (!str) return '—';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// close modals on backdrop click
+document.getElementById('routeModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDeleteModal(); });
+</script>
+</body>
+</html>

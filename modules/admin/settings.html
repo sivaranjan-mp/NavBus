@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Settings</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/admin.layout.css"/>
+  <style>
+    .settings-grid { display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start; }
+    @media(max-width:768px){.settings-grid{grid-template-columns:1fr;}}
+    .settings-nav { background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;overflow:hidden;position:sticky;top:20px; }
+    .settings-nav-item { display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:0.8rem;color:var(--text-muted);cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s,color 0.15s; }
+    .settings-nav-item:last-child{border-bottom:none;}
+    .settings-nav-item:hover,.settings-nav-item.active{background:rgba(201,168,76,0.07);color:var(--gold);}
+    .settings-panel { background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:28px;display:none; }
+    .settings-panel.active{display:block;}
+    .settings-section-title { font-family:var(--font-display);font-size:0.85rem;font-weight:700;color:var(--text-primary);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border); }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+    .form-group { display:flex;flex-direction:column;gap:6px;margin-bottom:16px; }
+    .form-label { font-size:0.72rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.07em; }
+    .form-input { background:var(--bg-tertiary);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.83rem;color:var(--text-primary);outline:none;font-family:var(--font-body);transition:border-color 0.2s; }
+    .form-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.12);}
+    .toggle-row { display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04); }
+    .toggle-row:last-child{border-bottom:none;}
+    .toggle-info { flex:1; }
+    .toggle-label { font-size:0.83rem;color:var(--text-primary);font-weight:500; }
+    .toggle-desc  { font-size:0.72rem;color:var(--text-muted);margin-top:2px; }
+    .toggle { position:relative;width:40px;height:22px;flex-shrink:0; }
+    .toggle input{opacity:0;width:0;height:0;}
+    .toggle-slider { position:absolute;inset:0;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:34px;cursor:pointer;transition:0.2s; }
+    .toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:2px;top:2px;background:var(--text-muted);border-radius:50%;transition:0.2s;}
+    .toggle input:checked + .toggle-slider{background:rgba(201,168,76,0.2);border-color:var(--gold);}
+    .toggle input:checked + .toggle-slider:before{transform:translateX(18px);background:var(--gold);}
+    .save-bar { display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+            <img src="../../assets/logo.png" alt="NavBus" class="sidebar-logo-img"/>
+    </a>
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="buses.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Fleet / Buses</a>
+      <a href="routes.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>Routes</a>
+      <a href="drivers.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Drivers</a>
+      <span class="sidebar-section-label">Monitoring</span>
+      <a href="alerts.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts</a>
+      <a href="reports.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</a>
+      <span class="sidebar-section-label">System</span>
+      <a href="users.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</a>
+      <a href="settings.html" class="sidebar-link active"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-status-bar"><div class="sidebar-live-dot"></div><span class="sidebar-live-label">All Systems Online</span></div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">AD</div>
+        <div class="sidebar-user-info"><span class="sidebar-user-name" id="sidebarUserName">Administrator</span><span class="sidebar-user-role">Admin</span></div>
+        <button class="sidebar-logout-btn" id="logoutBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-body">
+    <header class="admin-header">
+      <div class="header-left">
+        <button class="header-menu-btn" id="headerMenuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="header-breadcrumb"><a href="dashboard.html" class="breadcrumb-item">Dashboard</a><span class="breadcrumb-separator">›</span><span class="breadcrumb-item current">Settings</span></div>
+      </div>
+      <div class="header-right">
+        <div class="header-time"><div style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:livePulse 1.8s infinite;flex-shrink:0;"></div><span id="headerClock">00:00:00</span></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title"><span class="page-title-accent"></span>Settings</h1>
+          <p class="page-subtitle">System configuration, API keys, and notification preferences</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Settings Nav -->
+        <div class="settings-nav">
+          <div class="settings-nav-item active" data-tab="general">⚙️ &nbsp;General</div>
+          <div class="settings-nav-item" data-tab="api">🔑 &nbsp;API & Integrations</div>
+          <div class="settings-nav-item" data-tab="notifications">🔔 &nbsp;Notifications</div>
+          <div class="settings-nav-item" data-tab="tracking">📡 &nbsp;Tracking</div>
+          <div class="settings-nav-item" data-tab="security">🔒 &nbsp;Security</div>
+        </div>
+
+        <!-- Panels -->
+        <div>
+          <!-- General -->
+          <div class="settings-panel active" id="tab-general">
+            <div class="settings-section-title">My Profile</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Display Name</label><input class="form-input" id="fProfileName" placeholder="Your name"/></div>
+              <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="fProfileEmail" type="email" readonly style="opacity:0.6;cursor:not-allowed;"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="fProfilePhone" placeholder="+91 98400 00000" style="max-width:260px;"/></div>
+            <div id="profileMsg" style="display:none;font-size:0.8rem;margin-top:6px;"></div>
+            <div class="save-bar"><button class="btn btn-gold btn-md" id="btnSaveProfile">Save Profile</button></div>
+
+            <div class="settings-section-title" style="margin-top:28px;">Organisation</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Organisation Name</label><input class="form-input" value="NavBus Transport Dept."/></div>
+              <div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" type="email" value="admin@navbus.in"/></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Timezone</label><select class="form-input"><option selected>Asia/Kolkata (IST, UTC+5:30)</option><option>UTC</option></select></div>
+              <div class="form-group"><label class="form-label">Date Format</label><select class="form-input"><option>DD/MM/YYYY</option><option selected>YYYY-MM-DD</option></select></div>
+            </div>
+            <div class="form-group"><label class="form-label">System Description</label><textarea class="form-input" rows="3" style="resize:vertical;">Bus tracking and fleet management system for Ranipet district.</textarea></div>
+            <div class="save-bar"><button class="btn btn-outline btn-md">Reset</button><button class="btn btn-gold btn-md" onclick="saved()">Save Changes</button></div>
+          </div>
+
+          <!-- API -->
+          <div class="settings-panel" id="tab-api">
+            <div class="settings-section-title">Supabase</div>
+            <div class="form-group"><label class="form-label">Supabase URL</label><input class="form-input" id="fSupabaseUrl" type="url" placeholder="https://xxxx.supabase.co"/></div>
+            <div class="form-group"><label class="form-label">Supabase Anon Key</label><input class="form-input" id="fSupabaseKey" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"/></div>
+            <div class="settings-section-title" style="margin-top:24px;">Google Maps</div>
+            <div class="form-group"><label class="form-label">Maps API Key</label><input class="form-input" type="password" placeholder="AIza…"/></div>
+            <div class="form-group"><label class="form-label">Default Map Centre (lat, lng)</label><input class="form-input" placeholder="12.9255, 79.3221" value="12.9255, 79.3221"/></div>
+            <div class="save-bar"><button class="btn btn-outline btn-md">Reset</button><button class="btn btn-gold btn-md" onclick="saved()">Save Changes</button></div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-panel" id="tab-notifications">
+            <div class="settings-section-title">Alert Preferences</div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">GPS Signal Lost</div><div class="toggle-desc">Notify when a bus loses GPS for more than 2 minutes</div></div><label class="toggle"><input type="checkbox" id="prefGpsAlert" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Speed Violations</div><div class="toggle-desc">Alert when a driver exceeds the speed limit</div></div><label class="toggle"><input type="checkbox" id="prefSoundAlert" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Camera Offline</div><div class="toggle-desc">Notify when a camera feed is disrupted</div></div><label class="toggle"><input type="checkbox" id="prefCameraAlert" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Route Deviations</div><div class="toggle-desc">Alert when a bus deviates from its assigned route</div></div><label class="toggle"><input type="checkbox" id="prefAutoRefresh"/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Email Digest</div><div class="toggle-desc">Send daily summary email to admins</div></div><label class="toggle"><input type="checkbox" id="prefEmailAlert" checked/><span class="toggle-slider"></span></label></div>
+            <div id="prefsMsg" style="display:none;font-size:0.8rem;margin-top:6px;"></div>
+            <div class="save-bar"><button class="btn btn-gold btn-md" id="btnSavePrefs">Save Preferences</button></div>
+          </div>
+
+          <!-- Tracking -->
+          <div class="settings-panel" id="tab-tracking">
+            <div class="settings-section-title">GPS & Tracking</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Polling Interval (seconds)</label><input class="form-input" type="number" value="10" min="5" max="60"/></div>
+              <div class="form-group"><label class="form-label">Max Speed Limit (km/h)</label><input class="form-input" type="number" value="80" min="30" max="120"/></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">GPS Timeout (minutes)</label><input class="form-input" type="number" value="2" min="1" max="10"/></div>
+              <div class="form-group"><label class="form-label">Idle Timeout (minutes)</label><input class="form-input" type="number" value="5" min="1" max="30"/></div>
+            </div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Real-time Tracking</div><div class="toggle-desc">Enable live bus position updates on map</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Track History</div><div class="toggle-desc">Store and display 24-hour route history</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+            <div class="save-bar"><button class="btn btn-outline btn-md">Reset to Defaults</button><button class="btn btn-gold btn-md" onclick="saved()">Save Changes</button></div>
+          </div>
+
+          <!-- Security -->
+          <div class="settings-panel" id="tab-security">
+            <div class="settings-section-title">Access & Security</div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Require Email Verification</div><div class="toggle-desc">New users must verify email before login</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Session Timeout</div><div class="toggle-desc">Automatically log out after 8 hours of inactivity</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Audit Log</div><div class="toggle-desc">Record all admin actions for compliance</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
+            <div class="settings-section-title" style="margin-top:24px;">Change Password</div>
+            <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" id="fCurrentPwd" type="password" placeholder="••••••••"/></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">New Password</label><input class="form-input" id="fNewPwd" type="password" placeholder="••••••••"/></div>
+              <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" id="fConfirmPwd" type="password" placeholder="••••••••"/></div>
+            </div>
+            <div id="pwdMsg" style="display:none;font-size:0.8rem;margin-top:6px;"></div>
+            <div class="save-bar"><button class="btn btn-danger btn-md" id="btnChangePwd">Update Password</button></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/admin.auth.guard.js"></script>
+<script src="js/admin.layout.js"></script>
+<script src="js/admin.settings.js"></script>
+<script>
+  // Tab switching — keep inline since it's pure UI with no backend dependency
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.settings-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        item.classList.add('active');
+        document.getElementById('tab-' + item.dataset.tab)?.classList.add('active');
+      });
+    });
+  });
+</script>
+</body>
+</html>
