@@ -262,3 +262,20 @@
 .stagger-child:nth-child(4) { animation-delay: 0.26s; }
 .stagger-child:nth-child(5) { animation-delay: 0.33s; }
 .stagger-child:nth-child(6) { animation-delay: 0.40s; }
+/* ── Logo image (replaces SVG bus icon) ── */
+.user-header-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Logo inside map floating header ── */
+.map-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
