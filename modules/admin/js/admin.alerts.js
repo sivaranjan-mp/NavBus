@@ -8,14 +8,10 @@ let ALL_ALERTS    = [];
 let AUTO_REFRESH  = null;
 
 // ── Bootstrap ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadAlerts();
-
-  // Auto-refresh every 30 seconds
+document.addEventListener('DOMContentLoaded', () => {
+  loadAlerts();
   AUTO_REFRESH = setInterval(loadAlerts, 30_000);
-
   bindFilter();
-
   document.getElementById('btnMarkAllRead')?.addEventListener('click', markAllRead);
   document.getElementById('btnRefresh')?.addEventListener('click', loadAlerts);
 });

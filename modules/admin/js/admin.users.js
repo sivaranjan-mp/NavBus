@@ -7,9 +7,9 @@
 let ALL_USERS = [];
 
 // ── Bootstrap ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadUsers();
+document.addEventListener('DOMContentLoaded', () => {
   bindSearchFilter();
+  loadUsers();
 });
 
 // ── Fetch all profiles ────────────────────────────────────────
