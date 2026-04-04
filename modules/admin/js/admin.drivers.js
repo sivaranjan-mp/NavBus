@@ -8,10 +8,12 @@ let ALL_DRIVERS = [];
 let EDIT_ID     = null;   // UUID of driver being edited (null = new)
 
 // ── Bootstrap ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadDrivers();
+document.addEventListener('DOMContentLoaded', () => {
+  // Bind UI interactions immediately — never wait for data
   bindSearchFilter();
   bindModal();
+  // Load data async separately
+  loadDrivers();
 });
 
 // ── Fetch drivers + assigned bus plate ───────────────────────
@@ -134,7 +136,12 @@ window.filterDrivers = applyFilter;
 
 // ── Modal wiring ──────────────────────────────────────────────
 function bindModal() {
+  // Clicking the dark overlay (outside card) closes modal
   document.getElementById('modalOverlay')?.addEventListener('click', closeModal);
+
+  // Clicks INSIDE the card must NOT bubble up to the overlay
+  document.getElementById('driverModal')?.addEventListener('click', (e) => e.stopPropagation());
+
   document.getElementById('btnSaveDriver')?.addEventListener('click', saveDriver);
   document.getElementById('btnCancelDriver')?.addEventListener('click', closeModal);
 
@@ -143,7 +150,7 @@ function bindModal() {
     EDIT_ID = null;
     clearForm();
     document.getElementById('modalTitle').textContent = 'Add Driver';
-    document.getElementById('driverModal').style.display = 'flex';
+    document.getElementById('modalOverlay').style.display = 'flex';
   });
 }
 
@@ -163,12 +170,12 @@ function openEditModal(id) {
   if (activeEl) activeEl.checked = d.is_active;
 
   document.getElementById('modalTitle').textContent = 'Edit Driver';
-  document.getElementById('driverModal').style.display = 'flex';
+  document.getElementById('modalOverlay').style.display = 'flex';
 }
 window.openEditModal = openEditModal;
 
 function closeModal() {
-  document.getElementById('driverModal').style.display = 'none';
+  document.getElementById('modalOverlay').style.display = 'none';
   clearForm();
   EDIT_ID = null;
 }
