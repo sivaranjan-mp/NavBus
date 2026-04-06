@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>NavBus — Report an Issue</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/user.layout.css"/>
+  <style>
+    /* ── Page hero ── */
+    .complaint-hero {
+      padding: 28px 20px 20px;
+      border-bottom: 1px solid var(--gold-border);
+      background: linear-gradient(180deg, rgba(248,113,113,0.04) 0%, transparent 100%);
+    }
+    .complaint-hero-label {
+      font-family: var(--font-display);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--danger);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .complaint-hero-label::before {
+      content: '';
+      width: 18px; height: 1px;
+      background: var(--danger);
+      opacity: 0.5;
+    }
+    .complaint-hero-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .complaint-hero-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Form card ── */
+    .complaint-form-wrap {
+      padding: 20px;
+    }
+    .form-section {
+      margin-bottom: 24px;
+    }
+    .form-section-title {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.5);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .form-section-title::before {
+      content: '';
+      display: inline-block;
+      width: 2px; height: 12px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      border-radius: 2px;
+    }
+
+    /* ── Category chips ── */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .category-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--gold-border);
+      background: var(--bg-surface);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .category-chip:hover {
+      border-color: var(--gold-border-2);
+    }
+    .category-chip.selected {
+      border-color: var(--danger);
+      background: var(--danger-bg);
+    }
+    .category-chip input[type="radio"] { display: none; }
+    .category-chip-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .category-chip-label {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+    .category-chip.selected .category-chip-label {
+      color: var(--danger);
+    }
+
+    /* ── Severity ── */
+    .severity-row {
+      display: flex;
+      gap: 10px;
+    }
+    .severity-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--gold-border);
+      background: var(--bg-surface);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .severity-btn input[type="radio"] { display: none; }
+    .severity-emoji { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+    .severity-label {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+    }
+    .severity-btn.selected-low    { border-color: #4ade80; background: rgba(74,222,128,0.08); }
+    .severity-btn.selected-low .severity-label    { color: #4ade80; }
+    .severity-btn.selected-medium { border-color: #fbbf24; background: rgba(251,191,36,0.08); }
+    .severity-btn.selected-medium .severity-label { color: #fbbf24; }
+    .severity-btn.selected-high   { border-color: #f87171; background: rgba(248,113,113,0.08); }
+    .severity-btn.selected-high .severity-label   { color: #f87171; }
+
+    /* ── Form fields ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+    .form-label span { color: var(--danger); margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--gold-border-2);
+    }
+    .form-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c9a84c' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    .form-select option { background: #141209; color: #f0ebe0; }
+    .form-textarea {
+      resize: vertical;
+      min-height: 110px;
+      line-height: 1.6;
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+    .char-count {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .char-count.warn { color: var(--warning); }
+
+    /* ── Anonymous toggle ── */
+    .anon-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .anon-toggle-info { flex: 1; }
+    .anon-toggle-title {
+      font-family: var(--font-display);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .anon-toggle-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+    .toggle-switch {
+      position: relative;
+      width: 42px; height: 24px;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+    .toggle-switch input { display: none; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      border-radius: 99px;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid var(--gold-border);
+      transition: all 0.25s;
+      cursor: pointer;
+    }
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      top: 2px; left: 2px;
+      transition: all 0.25s;
+    }
+    .toggle-switch input:checked + .toggle-track {
+      background: rgba(201,168,76,0.2);
+      border-color: var(--gold);
+    }
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(18px);
+      background: var(--gold);
+    }
+
+    /* ── Submit button ── */
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #dc2626, #f87171);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(248,113,113,0.25);
+      margin-top: 8px;
+    }
+    .submit-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .submit-btn .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      display: none;
+    }
+    .submit-btn.loading .btn-text { display: none; }
+    .submit-btn.loading .spinner  { display: block; }
+
+    /* ── Success state ── */
+    .success-card {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 32px;
+      gap: 16px;
+    }
+    .success-card.visible { display: flex; }
+    .success-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .success-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem; font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+    }
+    .success-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    .success-ref {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 8px 16px;
+    }
+    .success-home-btn {
+      margin-top: 8px;
+      padding: 13px 32px;
+      border-radius: 12px;
+      background: var(--gold-glow);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .success-home-btn:hover { border-color: var(--gold); }
+
+    /* ── My complaints history ── */
+    .history-wrap { padding: 0 20px 100px; }
+    .complaint-hist-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .complaint-hist-card:hover { border-color: var(--gold-border-2); }
+    .hist-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .hist-cat {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .hist-status {
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 99px;
+    }
+    .hist-status.pending   { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.25);  color: #fbbf24; }
+    .hist-status.reviewing { background: rgba(96,165,250,0.1);  border: 1px solid rgba(96,165,250,0.25);  color: #60a5fa; }
+    .hist-status.resolved  { background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.25);  color: #4ade80; }
+    .hist-status.closed    { background: rgba(110,99,84,0.1);   border: 1px solid rgba(110,99,84,0.15);   color: var(--text-muted); }
+    .hist-desc {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .hist-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .hist-date {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+    }
+    .hist-ref {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--gold);
+      opacity: 0.6;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--gold-border);
+      padding: 0 20px;
+      margin-bottom: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 13px 0;
+      border: none;
+      background: none;
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--danger); border-bottom-color: var(--danger); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+  </style>
+</head>
+<body>
+<div class="user-shell">
+
+  <!-- HEADER -->
+  <header class="user-header">
+    <a href="home.html" class="user-header-logo">
+      <img src="../../assets/logo.png" alt="NavBus" class="user-header-logo-img"/>
+      <div>
+        <span class="user-header-logo-name">NAVBUS</span>
+        <span class="user-header-logo-sub">Report Issue</span>
+      </div>
+    </a>
+    <div class="user-header-right">
+      <a href="profile.html" class="user-avatar-btn" id="userAvatar">U</a>
+    </div>
+  </header>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabNew" onclick="switchTab('new')">Report</button>
+    <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">My Complaints</button>
+  </div>
+
+  <!-- MAIN -->
+  <main class="user-main">
+
+    <!-- ── TAB: New Complaint ── -->
+    <div class="tab-pane active" id="paneNew">
+
+      <div class="complaint-hero fade-up">
+        <div class="complaint-hero-label">Report an Issue</div>
+        <div class="complaint-hero-title">We're listening</div>
+        <div class="complaint-hero-sub">Faced a problem on the bus? Let us know and we'll fix it.</div>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="success-card" id="successCard">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Complaint Submitted</div>
+        <div class="success-sub">Thank you for reporting. Our team will review your complaint and take action within 48 hours.</div>
+        <div class="success-ref" id="successRef">REF# —</div>
+        <a href="home.html" class="success-home-btn">← Back to Home</a>
+      </div>
+
+      <!-- FORM -->
+      <form class="complaint-form-wrap" id="complaintForm" onsubmit="submitComplaint(event)">
+
+        <!-- Category -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Issue Category</div>
+          <div class="category-grid" id="categoryGrid">
+            <label class="category-chip selected">
+              <input type="radio" name="category" value="driver_behaviour" checked/>
+              <span class="category-chip-icon">🧑‍✈️</span>
+              <span class="category-chip-label">Driver Behaviour</span>
+            </label>
+            <label class="category-chip">
+              <input type="radio" name="category" value="vehicle_condition"/>
+              <span class="category-chip-icon">🚌</span>
+              <span class="category-chip-label">Vehicle Condition</span>
+            </label>
+            <label class="category-chip">
+              <input type="radio" name="category" value="delay_punctuality"/>
+              <span class="category-chip-icon">⏰</span>
+              <span class="category-chip-label">Delay / Punctuality</span>
+            </label>
+            <label class="category-chip">
+              <input type="radio" name="category" value="overcrowding"/>
+              <span class="category-chip-icon">👥</span>
+              <span class="category-chip-label">Overcrowding</span>
+            </label>
+            <label class="category-chip">
+              <input type="radio" name="category" value="safety_concern"/>
+              <span class="category-chip-icon">⚠️</span>
+              <span class="category-chip-label">Safety Concern</span>
+            </label>
+            <label class="category-chip">
+              <input type="radio" name="category" value="other"/>
+              <span class="category-chip-icon">💬</span>
+              <span class="category-chip-label">Other</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Severity -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Severity</div>
+          <div class="severity-row" id="severityRow">
+            <label class="severity-btn">
+              <input type="radio" name="severity" value="low"/>
+              <span class="severity-emoji">🟢</span>
+              <span class="severity-label">Low</span>
+            </label>
+            <label class="severity-btn selected-medium">
+              <input type="radio" name="severity" value="medium" checked/>
+              <span class="severity-emoji">🟡</span>
+              <span class="severity-label">Medium</span>
+            </label>
+            <label class="severity-btn">
+              <input type="radio" name="severity" value="high"/>
+              <span class="severity-emoji">🔴</span>
+              <span class="severity-label">High</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Bus & Route info -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Bus Details</div>
+          <div class="form-group">
+            <label class="form-label">Bus Number Plate <span>*</span></label>
+            <input type="text" class="form-input" id="busPlate" placeholder="e.g. TN 33 AB 1234" autocomplete="off"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Route (if known)</label>
+            <select class="form-select" id="routeSelect">
+              <option value="">— Select a route —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date & Time of Incident</label>
+            <input type="datetime-local" class="form-input" id="incidentTime"/>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Description</div>
+          <div class="form-group">
+            <label class="form-label">What happened? <span>*</span></label>
+            <textarea class="form-textarea" id="description" placeholder="Describe the issue in detail…" maxlength="800" oninput="updateCharCount(this)"></textarea>
+            <div class="char-count" id="charCount">0 / 800</div>
+          </div>
+        </div>
+
+        <!-- Anonymous -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Privacy</div>
+          <label class="anon-toggle-row" for="anonToggle">
+            <div class="anon-toggle-info">
+              <div class="anon-toggle-title">Submit Anonymously</div>
+              <div class="anon-toggle-sub">Your name won't be shown to the admin</div>
+            </div>
+            <div class="toggle-switch">
+              <input type="checkbox" id="anonToggle"/>
+              <div class="toggle-track"></div>
+            </div>
+          </label>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="btn-text">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            Submit Complaint
+          </span>
+          <div class="spinner"></div>
+        </button>
+
+      </form>
+    </div>
+
+    <!-- ── TAB: History ── -->
+    <div class="tab-pane" id="paneHistory">
+      <div class="history-wrap" id="historyList">
+        <div style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+          <div style="font-size:2rem;margin-bottom:12px;">📋</div>
+          <div style="font-family:var(--font-display);font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:4px;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="user-bottom-nav">
+    <a href="home.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Home</span>
+    </a>
+    <a href="routes.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Routes</span>
+    </a>
+    <a href="map.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Map</span>
+    </a>
+    <a href="schedule.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8"  y1="2" x2="8"  y2="6"/>
+          <line x1="3"  y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Schedule</span>
+    </a>
+    <a href="profile.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Profile</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/user.auth.guard.js"></script>
+<script>
+let _session = null;
+
+// ── Boot ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
+  _session = session;
+
+  // Set avatar initials
+  const name = session?.user?.user_metadata?.name || session?.user?.email || 'U';
+  const el = document.getElementById('userAvatar');
+  if (el) el.textContent = name.charAt(0).toUpperCase();
+
+  // Pre-fill incident time to now
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('incidentTime').value = now.toISOString().slice(0, 16);
+
+  // Load routes for dropdown
+  await loadRoutes();
+
+  // Wire category chips
+  document.getElementById('categoryGrid').addEventListener('change', (e) => {
+    document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('selected'));
+    e.target.closest('.category-chip')?.classList.add('selected');
+  });
+
+  // Wire severity buttons
+  document.getElementById('severityRow').addEventListener('change', (e) => {
+    document.querySelectorAll('.severity-btn').forEach(b => {
+      b.classList.remove('selected-low', 'selected-medium', 'selected-high');
+    });
+    const btn = e.target.closest('.severity-btn');
+    if (btn) btn.classList.add(`selected-${e.target.value}`);
+  });
+});
+
+// ── Load routes ───────────────────────────────────────────────
+async function loadRoutes() {
+  const { data } = await NAVBUS_DB
+    .from('routes')
+    .select('id, route_number, name')
+    .eq('is_active', true)
+    .order('route_number');
+
+  const sel = document.getElementById('routeSelect');
+  if (data) {
+    data.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = `${r.route_number} — ${r.name}`;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+// ── Char counter ──────────────────────────────────────────────
+function updateCharCount(el) {
+  const count = el.value.length;
+  const el2 = document.getElementById('charCount');
+  el2.textContent = `${count} / 800`;
+  el2.className = `char-count${count > 700 ? ' warn' : ''}`;
+}
+
+// ── Tab switch ────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+  document.getElementById(`Pane${tab.charAt(0).toUpperCase() + tab.slice(1)}`) ||
+    document.getElementById(`pane${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+  document.getElementById(`pane${tab === 'new' ? 'New' : 'History'}`).classList.add('active');
+
+  if (tab === 'history') loadHistory();
+}
+
+// ── Submit complaint ──────────────────────────────────────────
+async function submitComplaint(e) {
+  e.preventDefault();
+
+  const category    = document.querySelector('input[name="category"]:checked')?.value;
+  const severity    = document.querySelector('input[name="severity"]:checked')?.value;
+  const busPlate    = document.getElementById('busPlate').value.trim();
+  const routeId     = document.getElementById('routeSelect').value || null;
+  const incidentAt  = document.getElementById('incidentTime').value || null;
+  const description = document.getElementById('description').value.trim();
+  const isAnonymous = document.getElementById('anonToggle').checked;
+
+  if (!busPlate && !description) {
+    alert('Please fill in at least the bus plate number and description.');
+    return;
+  }
+  if (!description) {
+    alert('Please describe the issue.');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const payload = {
+    user_id:        isAnonymous ? null : (_session?.user?.id || null),
+    category,
+    severity,
+    bus_plate:      busPlate || null,
+    route_id:       routeId,
+    incident_at:    incidentAt ? new Date(incidentAt).toISOString() : null,
+    description,
+    is_anonymous:   isAnonymous,
+    status:         'pending',
+  };
+
+  const { data, error } = await NAVBUS_DB
+    .from('complaints')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+
+  if (error) {
+    alert('Failed to submit complaint. Please try again.\n\n' + error.message);
+    return;
+  }
+
+  // Show success
+  document.getElementById('complaintForm').style.display = 'none';
+  document.querySelector('.complaint-hero').style.display = 'none';
+  const ref = data?.id ? `REF# ${data.id.slice(0, 8).toUpperCase()}` : 'REF# SUBMITTED';
+  document.getElementById('successRef').textContent = ref;
+  document.getElementById('successCard').classList.add('visible');
+}
+
+// ── Load complaint history ─────────────────────────────────────
+async function loadHistory() {
+  const el = document.getElementById('historyList');
+  if (!_session) {
+    el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);">Please log in to view your complaints.</div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+    <div class="user-spinner" style="margin:0 auto 12px;"></div>Loading…</div>`;
+
+  const { data, error } = await NAVBUS_DB
+    .from('complaints')
+    .select('id, category, severity, bus_plate, description, status, created_at')
+    .eq('user_id', _session.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;">
+        <div style="font-size:2.5rem;margin-bottom:14px;">📭</div>
+        <div style="font-family:var(--font-display);font-size:0.82rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:6px;">No complaints yet</div>
+        <div style="font-size:0.74rem;color:var(--text-muted);">Your submitted complaints will appear here.</div>
+      </div>`;
+    return;
+  }
+
+  const CATEGORY_LABELS = {
+    driver_behaviour:  '🧑‍✈️ Driver Behaviour',
+    vehicle_condition: '🚌 Vehicle Condition',
+    delay_punctuality: '⏰ Delay / Punctuality',
+    overcrowding:      '👥 Overcrowding',
+    safety_concern:    '⚠️ Safety Concern',
+    other:             '💬 Other',
+  };
+
+  el.innerHTML = `<div style="padding:16px 0 0;">` +
+    data.map(c => `
+      <div class="complaint-hist-card">
+        <div class="hist-card-top">
+          <span class="hist-cat">${CATEGORY_LABELS[c.category] || c.category}</span>
+          <span class="hist-status ${c.status}">${c.status}</span>
+        </div>
+        <div class="hist-desc">${escHtml(c.description)}</div>
+        <div class="hist-footer">
+          <span class="hist-date">${new Date(c.created_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>
+          <span class="hist-ref">REF# ${c.id.slice(0,8).toUpperCase()}</span>
+        </div>
+      </div>`).join('') + `</div>`;
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

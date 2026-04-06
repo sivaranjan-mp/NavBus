@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Complaints</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/admin.layout.css"/>
+  <style>
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .filter-chip:hover { border-color: rgba(201,168,76,0.3); color: var(--text-secondary); }
+    .filter-chip.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.06); }
+    .filter-chip.danger.active  { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.06); }
+    .filter-chip.warning.active { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.06); }
+    .filter-chip.success.active { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.06); }
+
+    .search-input-wrap {
+      flex: 1; min-width: 200px; max-width: 320px;
+      position: relative;
+    }
+    .search-input-wrap svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+    .search-input-field {
+      width: 100%; padding: 8px 12px 8px 34px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; font-size: 0.82rem; color: var(--text-primary);
+      outline: none; transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .search-input-field:focus { border-color: rgba(201,168,76,0.35); }
+    .search-input-field::placeholder { color: var(--text-muted); }
+
+    /* ── Stats strip ── */
+    .complaint-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .cstat {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .cstat-icon {
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .cstat-val {
+      font-family: var(--font-mono);
+      font-size: 1.4rem; font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .cstat-label {
+      font-family: var(--font-display);
+      font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Table ── */
+    .complaints-table-wrap {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .complaints-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .complaints-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-family: var(--font-display);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .complaints-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(201,168,76,0.06);
+      vertical-align: middle;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .complaints-table tr:last-child td { border-bottom: none; }
+    .complaints-table tr:hover td { background: var(--bg-tertiary); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 99px;
+      font-family: var(--font-display);
+      font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-pending   { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.25);  color: #fbbf24; }
+    .badge-reviewing { background: rgba(96,165,250,0.1);  border: 1px solid rgba(96,165,250,0.25);  color: #60a5fa; }
+    .badge-resolved  { background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.25);  color: #4ade80; }
+    .badge-closed    { background: rgba(110,99,84,0.1);   border: 1px solid rgba(110,99,84,0.15);   color: var(--text-muted); }
+    .badge-low       { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2);   color: #4ade80; }
+    .badge-medium    { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);   color: #fbbf24; }
+    .badge-high      { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #f87171; }
+
+    /* ── Row action btn ── */
+    .row-action-btn {
+      padding: 5px 12px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-secondary); font-size: 0.72rem;
+      font-family: var(--font-display); letter-spacing: 0.06em;
+      cursor: pointer; transition: all 0.18s; white-space: nowrap;
+    }
+    .row-action-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Detail modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(4,4,3,0.85);
+      backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 20px;
+      width: 100%; max-width: 560px;
+      max-height: 90vh; overflow-y: auto;
+      animation: modalIn 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:none; } }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--gold-border);
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1rem; font-weight: 800;
+      letter-spacing: 0.08em; color: var(--text-primary);
+    }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.18s;
+    }
+    .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+    .modal-body { padding: 20px 24px; }
+    .modal-field { margin-bottom: 16px; }
+    .modal-field-label {
+      font-family: var(--font-display);
+      font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 5px;
+    }
+    .modal-field-value {
+      font-size: 0.88rem; color: var(--text-primary);
+      line-height: 1.6;
+    }
+    .modal-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 16px;
+    }
+    .modal-desc-box {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .status-select {
+      width: 100%; padding: 10px 12px;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text-primary);
+      font-family: var(--font-display); font-size: 0.82rem;
+      outline: none; cursor: pointer; margin-bottom: 10px;
+    }
+    .status-select option { background: #141209; }
+    .admin-note-area {
+      width: 100%; padding: 10px 12px;
+      background: var(--bg-tertiary); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text-primary);
+      font-size: 0.82rem; resize: vertical; min-height: 80px;
+      outline: none; line-height: 1.6; box-sizing: border-box;
+      font-family: inherit;
+    }
+    .admin-note-area::placeholder { color: var(--text-muted); }
+    .modal-footer {
+      display: flex; gap: 10px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--gold-border);
+    }
+    .btn-save {
+      flex: 1; padding: 11px;
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      border: none; border-radius: 10px;
+      color: var(--bg-primary); font-family: var(--font-display);
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-save:hover { filter: brightness(1.1); }
+    .btn-cancel-modal {
+      padding: 11px 20px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-tertiary);
+      color: var(--text-muted); font-family: var(--font-display);
+      font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .btn-cancel-modal:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Empty / loading ── */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state-title {
+      font-family: var(--font-display); font-size: 0.85rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-secondary); margin-bottom: 4px;
+    }
+    .ref-mono { font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold); }
+  </style>
+</head>
+<body>
+<div class="admin-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+      <img src="../../assets/logo.png" alt="NavBus" class="sidebar-logo-img"/>
+    </a>
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <a href="buses.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Fleet / Buses</a>
+      <a href="routes.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>Routes</a>
+      <a href="drivers.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Drivers</a>
+      <span class="sidebar-section-label">Monitoring</span>
+      <a href="live-map.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Live Map</a>
+      <a href="alerts.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Alerts<span class="sidebar-badge" id="sidebarAlertCount">0</span></a>
+      <a href="complaints.html" class="sidebar-link active"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="sidebar-badge" id="sidebarComplaintCount">0</span></a>
+      <a href="reports.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Reports</a>
+      <span class="sidebar-section-label">System</span>
+      <a href="users.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users</a>
+      <a href="settings.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-status-bar"><div class="sidebar-live-dot"></div><span class="sidebar-live-label">All Systems Online</span></div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">AD</div>
+        <div class="sidebar-user-info"><span class="sidebar-user-name" id="sidebarUserName">Administrator</span><span class="sidebar-user-role">Admin</span><span class="sidebar-user-email" id="sidebarUserEmail" style="font-size:0.6rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:block;"></span></div>
+        <button class="sidebar-logout-btn" id="logoutBtn" title="Sign out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- BODY -->
+  <div class="admin-body">
+    <header class="admin-header">
+      <div class="header-left">
+        <button class="header-menu-btn" id="headerMenuBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="header-breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-item">Dashboard</a>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item current">Complaints</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time"><div style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:livePulse 1.8s infinite;flex-shrink:0;"></div><span id="headerClock">00:00:00</span></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title"><span class="page-title-accent"></span>Complaints</h1>
+          <p class="page-subtitle">User-submitted complaints and incident reports</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-md" id="btnExport">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="complaint-stats" id="complaintStats">
+        <div class="cstat"><span class="cstat-icon">📋</span><div><div class="cstat-val" id="statTotal">—</div><div class="cstat-label">Total</div></div></div>
+        <div class="cstat"><span class="cstat-icon">⏳</span><div><div class="cstat-val" id="statPending" style="color:#fbbf24;">—</div><div class="cstat-label">Pending</div></div></div>
+        <div class="cstat"><span class="cstat-icon">🔍</span><div><div class="cstat-val" id="statReviewing" style="color:#60a5fa;">—</div><div class="cstat-label">Reviewing</div></div></div>
+        <div class="cstat"><span class="cstat-icon">✅</span><div><div class="cstat-val" id="statResolved" style="color:#4ade80;">—</div><div class="cstat-label">Resolved</div></div></div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip danger" data-filter="pending">Pending</button>
+        <button class="filter-chip" data-filter="reviewing" style="--active-color:#60a5fa">Reviewing</button>
+        <button class="filter-chip success" data-filter="resolved">Resolved</button>
+        <button class="filter-chip" data-filter="closed">Closed</button>
+        <div class="search-input-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input-field" id="searchInput" placeholder="Search plate, ref, category…"/>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="complaints-table-wrap">
+        <table class="complaints-table">
+          <thead>
+            <tr>
+              <th>Ref#</th>
+              <th>Category</th>
+              <th>Bus Plate</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th>User</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="complaintsBody">
+            <tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-title">Loading…</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Complaint Detail</div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="modal-field">
+          <div class="modal-field-label">Reference</div>
+          <div class="modal-field-value ref-mono" id="mRef">—</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Submitted</div>
+          <div class="modal-field-value" id="mDate">—</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Category</div>
+          <div class="modal-field-value" id="mCategory">—</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Severity</div>
+          <div class="modal-field-value" id="mSeverity">—</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">Bus Plate</div>
+          <div class="modal-field-value" id="mBusPlate">—</div>
+        </div>
+        <div class="modal-field">
+          <div class="modal-field-label">User</div>
+          <div class="modal-field-value" id="mUser">—</div>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Incident Time</div>
+        <div class="modal-field-value" id="mIncidentAt">—</div>
+      </div>
+      <div class="modal-field" style="margin-top:12px;margin-bottom:6px;">
+        <div class="modal-field-label">Description</div>
+      </div>
+      <div class="modal-desc-box" id="mDescription">—</div>
+
+      <div class="modal-field">
+        <div class="modal-field-label">Update Status</div>
+        <select class="status-select" id="mStatusSelect">
+          <option value="pending">⏳ Pending</option>
+          <option value="reviewing">🔍 Reviewing</option>
+          <option value="resolved">✅ Resolved</option>
+          <option value="closed">🔒 Closed</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">Admin Note (internal)</div>
+        <textarea class="admin-note-area" id="mAdminNote" placeholder="Add an internal note…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel-modal" id="modalCancelBtn">Cancel</button>
+      <button class="btn-save" id="modalSaveBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/admin.auth.guard.js"></script>
+<script src="js/admin.layout.js"></script>
+<script>
+const CATEGORY_LABELS = {
+  driver_behaviour:  '🧑‍✈️ Driver Behaviour',
+  vehicle_condition: '🚌 Vehicle Condition',
+  delay_punctuality: '⏰ Delay / Punctuality',
+  overcrowding:      '👥 Overcrowding',
+  safety_concern:    '⚠️ Safety Concern',
+  other:             '💬 Other',
+};
+
+let _allComplaints = [];
+let _currentFilter = 'all';
+let _currentSearch = '';
+let _openId = null;
+
+// ── Boot ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadComplaints();
+  wireFilters();
+  wireModal();
+  wireExport();
+
+  // Clock
+  setInterval(() => {
+    const el = document.getElementById('headerClock');
+    if (el) el.textContent = new Date().toTimeString().slice(0, 8);
+  }, 1000);
+});
+
+// ── Load all complaints ───────────────────────────────────────
+async function loadComplaints() {
+  const { data, error } = await NAVBUS_DB
+    .from('complaints')
+    .select('id, category, severity, bus_plate, description, status, is_anonymous, user_id, incident_at, admin_note, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('complaintsBody').innerHTML =
+      `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Failed to load — ${escHtml(error.message)}</div></div></td></tr>`;
+    return;
+  }
+
+  _allComplaints = data || [];
+  updateStats();
+  renderTable();
+
+  // Badge count for sidebar
+  const pending = _allComplaints.filter(c => c.status === 'pending').length;
+  const badge = document.getElementById('sidebarComplaintCount');
+  if (badge) badge.textContent = pending;
+}
+
+// ── Stats ────────────────────────────────────────────────────
+function updateStats() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('statTotal',     _allComplaints.length);
+  set('statPending',   _allComplaints.filter(c => c.status === 'pending').length);
+  set('statReviewing', _allComplaints.filter(c => c.status === 'reviewing').length);
+  set('statResolved',  _allComplaints.filter(c => c.status === 'resolved').length);
+}
+
+// ── Render table ──────────────────────────────────────────────
+function renderTable() {
+  let rows = _allComplaints;
+  if (_currentFilter !== 'all') rows = rows.filter(c => c.status === _currentFilter);
+  if (_currentSearch) {
+    const q = _currentSearch.toLowerCase();
+    rows = rows.filter(c =>
+      c.id?.toLowerCase().includes(q) ||
+      c.bus_plate?.toLowerCase().includes(q) ||
+      c.category?.toLowerCase().includes(q) ||
+      c.description?.toLowerCase().includes(q)
+    );
+  }
+
+  const tbody = document.getElementById('complaintsBody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <div class="empty-state-title">No complaints found</div>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td class="ref-mono">${c.id.slice(0,8).toUpperCase()}</td>
+      <td>${CATEGORY_LABELS[c.category] || c.category}</td>
+      <td style="font-family:var(--font-mono);font-size:0.78rem;">${escHtml(c.bus_plate || '—')}</td>
+      <td><span class="badge badge-${c.severity}">${c.severity}</span></td>
+      <td><span class="badge badge-${c.status}">${c.status}</span></td>
+      <td style="color:var(--text-muted);font-size:0.76rem;">${new Date(c.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td>
+      <td style="font-size:0.76rem;">${c.is_anonymous ? '<span style="color:var(--text-muted);">Anonymous</span>' : (c.user_id ? c.user_id.slice(0,8)+'…' : '—')}</td>
+      <td><button class="row-action-btn" onclick="openModal('${c.id}')">Review →</button></td>
+    </tr>`).join('');
+}
+
+// ── Filter wiring ─────────────────────────────────────────────
+function wireFilters() {
+  document.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _currentFilter = btn.dataset.filter;
+      renderTable();
+    });
+  });
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    _currentSearch = e.target.value.trim();
+    renderTable();
+  });
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openModal(id) {
+  const c = _allComplaints.find(x => x.id === id);
+  if (!c) return;
+  _openId = id;
+
+  const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.textContent = val || '—'; };
+  set('mRef',        c.id.slice(0,8).toUpperCase());
+  set('mDate',       new Date(c.created_at).toLocaleString('en-IN'));
+  set('mCategory',   CATEGORY_LABELS[c.category] || c.category);
+  set('mSeverity',   c.severity);
+  set('mBusPlate',   c.bus_plate);
+  set('mUser',       c.is_anonymous ? 'Anonymous' : (c.user_id ? c.user_id.slice(0,12)+'…' : 'Unknown'));
+  set('mIncidentAt', c.incident_at ? new Date(c.incident_at).toLocaleString('en-IN') : 'Not specified');
+  set('mDescription', c.description);
+  document.getElementById('mStatusSelect').value = c.status;
+  document.getElementById('mAdminNote').value = c.admin_note || '';
+
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function wireModal() {
+  const close = () => {
+    document.getElementById('modalBackdrop').classList.remove('open');
+    _openId = null;
+  };
+
+  document.getElementById('modalClose').onclick = close;
+  document.getElementById('modalCancelBtn').onclick = close;
+  document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modalBackdrop')) close();
+  });
+
+  document.getElementById('modalSaveBtn').addEventListener('click', async () => {
+    if (!_openId) return;
+    const newStatus = document.getElementById('mStatusSelect').value;
+    const adminNote = document.getElementById('mAdminNote').value.trim();
+
+    const btn = document.getElementById('modalSaveBtn');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+
+    const { error } = await NAVBUS_DB
+      .from('complaints')
+      .update({ status: newStatus, admin_note: adminNote || null, updated_at: new Date().toISOString() })
+      .eq('id', _openId);
+
+    btn.textContent = 'Save Changes'; btn.disabled = false;
+
+    if (error) { alert('Failed to update: ' + error.message); return; }
+
+    // Update local cache
+    const idx = _allComplaints.findIndex(c => c.id === _openId);
+    if (idx !== -1) {
+      _allComplaints[idx].status = newStatus;
+      _allComplaints[idx].admin_note = adminNote;
+    }
+    updateStats(); renderTable(); close();
+  });
+}
+
+// ── Export CSV ────────────────────────────────────────────────
+function wireExport() {
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const headers = ['Ref','Category','Bus Plate','Severity','Status','Submitted','Anonymous','Description'];
+    const rows = _allComplaints.map(c => [
+      c.id.slice(0,8).toUpperCase(),
+      c.category,
+      c.bus_plate || '',
+      c.severity,
+      c.status,
+      new Date(c.created_at).toLocaleString('en-IN'),
+      c.is_anonymous ? 'Yes' : 'No',
+      `"${(c.description || '').replace(/"/g, '""')}"`,
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `navbus_complaints_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
