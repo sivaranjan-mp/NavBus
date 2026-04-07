@@ -10,10 +10,6 @@ const EMAILJS_PUBLIC_KEY  = 'iT9KnA4H6VqidKTRd';    // Account → API Keys
 const EMAILJS_SERVICE_ID  = 'service_33ks6of';    // Email Services tab
 const EMAILJS_TEMPLATE_ID = 'template_sxq7pcr';   // Email Templates tab
 =======
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';    // Account → API Keys
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';    // Email Services tab
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';   // Email Templates tab
->>>>>>> 40a6ac8b7700cc7ad8af388e39d6f684d98124e8
 
 // ── OTP Settings ─────────────────────────────────────────────
 const OTP_EXPIRY_MINUTES = 10;
