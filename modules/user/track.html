@@ -8,7 +8,16 @@
   <link rel="stylesheet" href="../../css/reset.css"/>
   <link rel="stylesheet" href="../../lib/leaflet.css"/>
   <link rel="stylesheet" href="css/user.layout.css"/>
+  <!-- Anti-flash: apply theme before first paint -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('navbus_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="css/user.track.css"/>
+  <script src="../../js/theme.js"></script>
+  <script src="js/user.theme.js"></script>
 </head>
 <body style="margin:0;padding:0;background:#060604;overflow:hidden;">
 

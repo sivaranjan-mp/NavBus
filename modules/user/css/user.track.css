@@ -307,3 +307,26 @@
 #userTrackMap .leaflet-tile       { filter: brightness(0.55) saturate(0.45) sepia(0.18); }
 #userTrackMap .leaflet-control-zoom,
 #userTrackMap .leaflet-attribution { display: none !important; }
+/* ── Light mode overrides — track ── */
+[data-theme="light"] .track-header,
+[data-theme="light"] .track-info-card,
+[data-theme="light"] .track-stat-row,
+[data-theme="light"] .track-stop-item {
+  background: var(--bg-surface);
+  border-color: var(--gold-border);
+}
+
+/* ============================================================
+   Light Mode — Track Page Overrides
+   ============================================================ */
+
+[data-theme="light"] .track-header {
+  background: rgba(240,235,224,0.95);
+  border-bottom-color: var(--gold-border);
+}
+
+[data-theme="light"] .track-card,
+[data-theme="light"] .track-info-row {
+  background: var(--bg-surface);
+  border-color: var(--gold-border);
+}
