@@ -190,6 +190,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../../js/config.js"></script>
   <script src="../../js/utils.js"></script>
+  <script src="js/auth.emailjs.js"></script>
   <script src="js/auth.core.js"></script>
   <script src="js/auth.redirect.js"></script>
   <script src="js/auth.session.js"></script>
@@ -197,6 +198,7 @@
     (async () => { await redirectIfAuthenticated(); })();
 
     let pendingEmail = '';
+    let pendingName  = '';
     let countdownInterval = null;
 
     // ── Check if arrived from login page OTP redirect ──────
@@ -259,7 +261,8 @@
 
       setButtonLoading(btn, true);
 
-      const { data, error, requiresOTP } = await authSignUp(name, email, pwd);
+      // ── Step 1: Create account in Supabase (no email confirm needed) ──
+      const { data, error } = await authSignUp(name, email, pwd);
 
       if (error) {
         setButtonLoading(btn, false);
@@ -272,17 +275,19 @@
       }
 
       pendingEmail = email;
+      pendingName  = name;
+
+      // ── Step 2: Send OTP via EmailJS ──────────────────────
+      const otpResult = await emailjsSendSignupOTP(name, email);
       setButtonLoading(btn, false);
 
-      if (requiresOTP) {
-        Toast.info('Check your email for the verification code.');
-        showOTPStep(email);
-      } else {
-        // Email confirmation disabled in Supabase — direct login
-        Toast.success('Account created! Redirecting...');
-        showSuccessStep();
-        setTimeout(async () => { await redirectByRole(data.user); }, 2000);
+      if (otpResult.error) {
+        Toast.error(otpResult.error.message);
+        return;
       }
+
+      Toast.info('A 6-digit code has been sent to your email.');
+      showOTPStep(email);
     });
 
     // ── Show OTP step ──────────────────────────────────────
@@ -381,24 +386,31 @@
 
       setButtonLoading(btn, true);
 
-      const { data, error } = await authVerifySignupOTP(pendingEmail, code);
+      // ── Verify via EmailJS OTPStore ──────────────────────────
+      const { valid, reason } = emailjsVerifyOTP(pendingEmail, code);
 
-      if (error) {
+      if (!valid) {
         setButtonLoading(btn, false);
         inputs.forEach(i => i.classList.add('otp-error'));
         const errBox  = document.getElementById('otpErrorMsg');
         const errText = document.getElementById('otpErrorText');
-        errText.textContent = error.message?.includes('expired')
-          ? 'Code has expired. Please request a new one.'
-          : 'Invalid code. Please check and try again.';
+        errText.textContent = reason;
         errBox.style.display = 'flex';
         return;
       }
 
+      // OTP valid — sign in the user (account was created in step 1)
+      const { data: signInData, error: signInError } = await authSignIn(pendingEmail, null);
+      // We don't have the password here; just get the session that was created at signup
+      const session = await authGetSession();
+
       setButtonLoading(btn, false);
-      Toast.success('Email verified successfully!');
+      Toast.success('Email verified! Welcome to NavBus 🎉');
       showSuccessStep();
-      setTimeout(async () => { await redirectByRole(data.user); }, 1800);
+      setTimeout(async () => {
+        const user = session?.user || signInData?.user;
+        await redirectByRole(user);
+      }, 1800);
     }
 
     document.getElementById('verifyOTPBtn').addEventListener('click', triggerOTPVerify);
@@ -428,8 +440,8 @@
 
     // ── Resend OTP ─────────────────────────────────────────
     document.getElementById('resendOTPBtn').addEventListener('click', async () => {
-      const { error } = await authResendOTP(pendingEmail, 'signup');
-      if (error) {
+      const resendResult = await emailjsResendOTP(pendingName, pendingEmail, 'signup');
+      if (resendResult.error) {
         Toast.error('Could not resend code. Please try again.');
       } else {
         Toast.info('New code sent — check your inbox.');

@@ -43,3 +43,47 @@ const APP_VERSION = '1.0.0';
       (Dashboard → Auth → URL Configuration → enable OTP)
    5. Run supabase/schema.sql to create the profiles table
    ──────────────────────────────────────────────────────────── */
+
+/* ── EmailJS Configuration ───────────────────────────────────
+   Used for OTP email delivery (signup verification + password reset).
+   Replace the values below with your EmailJS credentials.
+
+   Setup steps:
+   1. https://www.emailjs.com → Create free account
+   2. Email Services → Add Service (Gmail / Outlook / SMTP)
+   3. Email Templates → create TWO templates:
+
+   ── Template 1: Signup Verification ─────────────────────────
+   Subject : Your NavBus Verification Code
+   Body    :
+     Hi {{to_name}},
+     Your NavBus verification code is:
+
+     {{otp_code}}
+
+     This code expires in {{expires_min}} minutes.
+     If you did not create an account, ignore this email.
+
+     — {{app_name}} Team
+
+   ── Template 2: Password Reset ───────────────────────────────
+   Subject : NavBus Password Reset Code
+   Body    :
+     Your NavBus password reset code is:
+
+     {{otp_code}}
+
+     This code expires in {{expires_min}} minutes.
+     If you did not request this, ignore this email.
+
+     — {{app_name}} Team
+
+   4. Account → API Keys → copy Public Key
+   5. Paste your values in modules/auth/js/auth.emailjs.js
+
+   ── Supabase: disable built-in email confirmation ────────────
+   Dashboard → Authentication → Providers → Email
+   → Turn OFF "Confirm email"
+   This lets Supabase create accounts without sending its own
+   email — NavBus handles OTP via EmailJS instead.
+   ──────────────────────────────────────────────────────────── */
