@@ -6,14 +6,13 @@
 // Stored temporarily during reset flow (sessionStorage only)
 let _resetEmail = '';
 
-// ── STEP 1: Send reset OTP via EmailJS ───────────────────────
+// ── STEP 1: Send reset OTP ────────────────────────────────────
 async function handleForgotPassword(email) {
   if (!validateEmail(email)) {
     return { error: { message: 'Please enter a valid email address.' } };
   }
 
-  // Send OTP via EmailJS (not Supabase)
-  const result = await emailjsSendResetOTP(email.trim().toLowerCase());
+  const result = await authSendPasswordReset(email);
   if (result.error) return result;
 
   // Save email for OTP step
@@ -21,15 +20,14 @@ async function handleForgotPassword(email) {
   return { success: true };
 }
 
-// ── STEP 2: Verify recovery OTP via EmailJS ───────────────────
+// ── STEP 2: Verify recovery OTP ──────────────────────────────
 async function handleVerifyRecoveryOTP(email, token) {
   if (!email || !token || token.length < 6) {
     return { error: { message: 'Please enter the complete 6-digit code.' } };
   }
 
-  // Verify via client-side OTPStore (EmailJS flow)
-  const { valid, reason } = emailjsVerifyOTP(email, token);
-  if (!valid) return { error: { message: reason } };
+  const result = await authVerifyRecoveryOTP(email, token);
+  if (result.error) return result;
 
   // Mark OTP as verified so reset page can proceed
   sessionStorage.setItem('navbus_otp_verified', '1');

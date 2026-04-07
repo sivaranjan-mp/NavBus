@@ -21,13 +21,6 @@ async function authSignUp(name, email, password) {
 
   if (error) return { error };
 
-  // Supabase returns 200 with a fake user (no identities) when the email
-  // is already registered and "Confirm email" is disabled.
-  // Detect this and surface it as a proper error.
-  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    return { error: { message: 'already registered' } };
-  }
-
   // Profile row is auto-created by Supabase trigger (see schema.sql).
   // Fallback: manually insert if trigger not set up yet.
   if (data?.user) {
@@ -45,18 +38,18 @@ async function authSignUp(name, email, password) {
     }
   }
 
-  return { data, role, requiresOTP: !data?.session };
+  return { data, role };
 }
 
-// ── VERIFY OTP (SIGNUP CONFIRMATION) ─────────────────────────
-async function authVerifySignupOTP(email, token) {
-  const { data, error } = await NAVBUS_DB.auth.verifyOtp({
-    email: email.trim().toLowerCase(),
-    token: token.trim(),
-    type:  'signup',
-  });
-  if (error) return { error };
-  return { data };
+// ── SIGN IN AFTER EMAILJS OTP VERIFIED ───────────────────────
+// Supabase email confirmation must be OFF in your dashboard.
+// After EmailJS OTP is verified locally, we check if Supabase
+// already has a session (auto-confirmed), or signal to redirect.
+async function authSignInAfterVerify(email) {
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
+  if (session) return { data: { user: session.user } };
+  // No session — Supabase confirmation still pending, redirect to login
+  return { error: { message: 'Please sign in to continue.' } };
 }
 
 // ── SIGN IN ──────────────────────────────────────────────────
@@ -107,18 +100,14 @@ async function authGetUserRole(user = null) {
     .eq('id', currentUser.id)
     .single();
 
-  if (error || !data) return 'user'; // Default to user
+  if (error || !data) return 'user';
   return data.role;
 }
 
-// ── SEND PASSWORD RESET EMAIL (OTP) ──────────────────────────
+// ── SEND PASSWORD RESET EMAIL ─────────────────────────────────
 async function authSendPasswordReset(email) {
   const { error } = await NAVBUS_DB.auth.resetPasswordForEmail(
-    email.trim().toLowerCase(),
-    {
-      // Optional: override redirect URL
-      // redirectTo: 'https://yoursite.com/modules/auth/reset-password.html'
-    }
+    email.trim().toLowerCase()
   );
   if (error) return { error };
   return { success: true };
@@ -144,7 +133,7 @@ async function authUpdatePassword(newPassword) {
   return { data };
 }
 
-// ── RESEND OTP ────────────────────────────────────────────────
+// ── RESEND OTP (Supabase fallback — not used in EmailJS flow) ─
 async function authResendOTP(email, type = 'signup') {
   const { error } = await NAVBUS_DB.auth.resend({
     type,

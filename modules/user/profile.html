@@ -7,13 +7,6 @@
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
   <link rel="stylesheet" href="css/user.layout.css"/>
-  <!-- Anti-flash: apply theme before first paint -->
-  <script>
-    (function(){
-      var t = localStorage.getItem('navbus_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-    })();
-  </script>
   <style>
     .profile-hero {
       padding: 32px 20px 24px;
@@ -182,7 +175,6 @@
       padding: 8px 20px 4px;
     }
   </style>
-  <script src="js/user.theme.js"></script>
 </head>
 <body>
 <div class="user-shell">
@@ -305,64 +297,6 @@
     <div class="profile-section">
       <div class="profile-section-title">App</div>
       <div class="profile-card">
-        <div class="profile-row" style="cursor:pointer;" onclick="NavBusTheme.toggle(); updateThemeToggle();">
-          <div class="profile-row-icon" id="themeRowIcon">
-            <!-- icon swaps with JS -->
-            <svg id="iconDark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            <svg id="iconLight" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          </div>
-          <div class="profile-row-content theme-row">
-            <div>
-              <div class="profile-row-label" id="themeLabel">Appearance</div>
-              <div class="profile-row-value" id="themeValue">Dark Mode</div>
-            </div>
-            <div class="theme-toggle-wrap">
-              <span class="theme-mode-label" id="lblDark">Dark</span>
-              <label class="theme-switch" onclick="event.stopPropagation();">
-                <input type="checkbox" class="theme-toggle-input" onchange="NavBusTheme.apply(this.checked ? NavBusTheme.LIGHT : NavBusTheme.DARK); updateThemeToggle();"/>
-                <div class="theme-track">
-                  <div class="theme-thumb" id="themeThumb">🌙</div>
-                </div>
-              </label>
-              <span class="theme-mode-label" id="lblLight">Light</span>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- Theme toggle row -->
-        <div class="profile-row" id="themeRow" style="cursor:pointer;" onclick="toggleTheme()">
-          <div class="profile-row-icon" id="themeIcon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-          </div>
-          <div class="profile-row-content">
-            <div class="profile-row-label">Appearance</div>
-            <div class="profile-row-value" id="themeLabel">Dark Mode</div>
-          </div>
-          <!-- Toggle pill -->
-          <div id="themePill" style="
-            display:flex;align-items:center;
-            gap:6px;padding:5px 12px;
-            border-radius:99px;
-            border:1px solid var(--gold-border);
-            background:rgba(160,116,42,0.08);
-            font-family:var(--font-display);
-            font-size:0.6rem;font-weight:700;
-            letter-spacing:0.1em;text-transform:uppercase;
-            color:var(--gold);white-space:nowrap;
-            transition:all 0.2s;
-          ">
-            <span id="themePillIcon">🌙</span>
-            <span id="themePillText">Dark</span>
-          </div>
-        </div>
-
         <div class="profile-row">
           <div class="profile-row-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -387,30 +321,6 @@
           <div class="profile-row-content">
             <div class="profile-row-label">Platform</div>
             <div class="profile-row-value">NavBus Smart Tracking</div>
-          </div>
-        </div>
-        <!-- Theme / Display Mode -->
-        <div class="profile-row theme-row">
-          <div class="profile-row-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/>
-              <line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/>
-              <line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-          </div>
-          <div class="profile-row-content theme-row-info">
-            <div class="theme-row-label" id="themeLabel">Dark Mode</div>
-            <div class="theme-row-sub" id="themeSub">Current display mode</div>
-          </div>
-          <div class="theme-pills">
-            <button class="theme-pill active" id="pillDark" onclick="setTheme('dark')">🌙 Dark</button>
-            <button class="theme-pill" id="pillLight" onclick="setTheme('light')">☀️ Normal</button>
           </div>
         </div>
       </div>
@@ -493,17 +403,17 @@
 <script src="../../js/config.js"></script>
 <script src="../../js/utils.js"></script>
 <script src="js/user.auth.guard.js"></script>
-<script src="js/user.theme.js"></script>
 <script>
-  // ── Populate profile data ────────────────────────────────────
+  // Await the guard's Promise — no more setTimeout hacks
   window.NAVBUS_USER_READY.then(async (user) => {
-    if (!user) return;
+    if (!user) return; // Guard already redirected
 
     const name     = user.name  || 'Passenger';
     const email    = user.email || '—';
     const role     = user.role  || 'user';
     const initials = name.slice(0, 2).toUpperCase();
 
+    // Avatar & hero
     const avatarEl = document.getElementById('userAvatar');
     if (avatarEl) avatarEl.textContent = initials;
     document.getElementById('profileAvatarLg').textContent = initials;
@@ -512,6 +422,7 @@
     document.getElementById('infoName').textContent        = name;
     document.getElementById('infoEmail').textContent       = email;
 
+    // Role badge
     const badge    = document.getElementById('profileRoleBadge');
     const roleText = document.getElementById('profileRoleText');
     if (badge && roleText) {
@@ -525,6 +436,7 @@
       }
     }
 
+    // Member since — prefer createdAt from guard, fallback to getUser()
     let joinedDate = user.createdAt ? new Date(user.createdAt) : null;
     if (!joinedDate) {
       const { data: { user: authUser } } = await NAVBUS_DB.auth.getUser();
@@ -535,39 +447,25 @@
       statJoined.textContent = joinedDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
     }
 
+    // Recent searches count
     const recent = JSON.parse(localStorage.getItem('navbus_recent') || '[]');
     const statSearches = document.getElementById('statSearches');
     if (statSearches) statSearches.textContent = recent.length;
 
+    // Logout — correct path from modules/user/ → modules/auth/
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await NAVBUS_DB.auth.signOut();
+      window.location.href = '../auth/login.html';
+    });
+  });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
       await NAVBUS_DB.auth.signOut();
       window.location.href = '../auth/login.html';
     });
   });
-
-  // ── Theme toggle ─────────────────────────────────────────────
-  function updateThemeToggle() {
-    const isLight = NavBusTheme.isLight();
-    const thumbEl  = document.getElementById('themeThumb');
-    const valueEl  = document.getElementById('themeValue');
-    const iconDark  = document.getElementById('iconDark');
-    const iconLight = document.getElementById('iconLight');
-    const lblDark   = document.getElementById('lblDark');
-    const lblLight  = document.getElementById('lblLight');
-
-    if (thumbEl)   thumbEl.textContent   = isLight ? '☀️' : '🌙';
-    if (valueEl)   valueEl.textContent   = isLight ? 'Light Mode (Normal)' : 'Dark Mode';
-    if (iconDark)  iconDark.style.display  = isLight ? 'none' : '';
-    if (iconLight) iconLight.style.display = isLight ? ''     : 'none';
-    if (lblDark)   lblDark.classList.toggle('active',  !isLight);
-    if (lblLight)  lblLight.classList.toggle('active',  isLight);
-
-    document.querySelectorAll('.theme-toggle-input').forEach(inp => {
-      inp.checked = isLight;
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', updateThemeToggle);
 </script>
 </body>
 </html>
