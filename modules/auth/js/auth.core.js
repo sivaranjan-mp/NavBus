@@ -38,18 +38,18 @@ async function authSignUp(name, email, password) {
     }
   }
 
-  return { data, role };
+  return { data, role, requiresOTP: !data?.session };
 }
 
-// ── SIGN IN AFTER EMAILJS OTP VERIFIED ───────────────────────
-// Supabase email confirmation must be OFF in your dashboard.
-// After EmailJS OTP is verified locally, we check if Supabase
-// already has a session (auto-confirmed), or signal to redirect.
-async function authSignInAfterVerify(email) {
-  const { data: { session } } = await NAVBUS_DB.auth.getSession();
-  if (session) return { data: { user: session.user } };
-  // No session — Supabase confirmation still pending, redirect to login
-  return { error: { message: 'Please sign in to continue.' } };
+// ── VERIFY OTP (SIGNUP CONFIRMATION) ─────────────────────────
+async function authVerifySignupOTP(email, token) {
+  const { data, error } = await NAVBUS_DB.auth.verifyOtp({
+    email: email.trim().toLowerCase(),
+    token: token.trim(),
+    type:  'signup',
+  });
+  if (error) return { error };
+  return { data };
 }
 
 // ── SIGN IN ──────────────────────────────────────────────────
@@ -100,14 +100,18 @@ async function authGetUserRole(user = null) {
     .eq('id', currentUser.id)
     .single();
 
-  if (error || !data) return 'user';
+  if (error || !data) return 'user'; // Default to user
   return data.role;
 }
 
-// ── SEND PASSWORD RESET EMAIL ─────────────────────────────────
+// ── SEND PASSWORD RESET EMAIL (OTP) ──────────────────────────
 async function authSendPasswordReset(email) {
   const { error } = await NAVBUS_DB.auth.resetPasswordForEmail(
-    email.trim().toLowerCase()
+    email.trim().toLowerCase(),
+    {
+      // Optional: override redirect URL
+      // redirectTo: 'https://yoursite.com/modules/auth/reset-password.html'
+    }
   );
   if (error) return { error };
   return { success: true };
@@ -133,7 +137,7 @@ async function authUpdatePassword(newPassword) {
   return { data };
 }
 
-// ── RESEND OTP (Supabase fallback — not used in EmailJS flow) ─
+// ── RESEND OTP ────────────────────────────────────────────────
 async function authResendOTP(email, type = 'signup') {
   const { error } = await NAVBUS_DB.auth.resend({
     type,

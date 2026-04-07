@@ -187,11 +187,8 @@
     </div>
   </div>
 
-  <!-- EmailJS SDK — must load before emailjs.config.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../../js/config.js"></script>
-  <script src="../../js/emailjs.config.js"></script>
   <script src="../../js/utils.js"></script>
   <script src="js/auth.core.js"></script>
   <script src="js/auth.redirect.js"></script>
@@ -199,17 +196,13 @@
   <script>
     (async () => { await redirectIfAuthenticated(); })();
 
-    // ── Initialize EmailJS ─────────────────────────────────
-    initEmailJS();
-
-    let pendingEmail      = '';
-    let pendingName       = '';
+    let pendingEmail = '';
     let countdownInterval = null;
 
     // ── Check if arrived from login page OTP redirect ──────
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlStep   = urlParams.get('step');
-    const urlEmail  = urlParams.get('email');
+    const urlParams  = new URLSearchParams(window.location.search);
+    const urlStep    = urlParams.get('step');
+    const urlEmail   = urlParams.get('email');
 
     if (urlStep === 'otp' && urlEmail) {
       pendingEmail = decodeURIComponent(urlEmail);
@@ -240,9 +233,9 @@
 
     // ── Confirm password match ─────────────────────────────
     document.getElementById('regConfirmPwd').addEventListener('input', (e) => {
-      const pwd   = document.getElementById('regPassword').value;
-      const icon  = document.getElementById('confirmPwdIcon');
-      const match = e.target.value === pwd && e.target.value.length > 0;
+      const pwd    = document.getElementById('regPassword').value;
+      const icon   = document.getElementById('confirmPwdIcon');
+      const match  = e.target.value === pwd && e.target.value.length > 0;
       icon.style.display = match ? 'flex' : 'none';
     });
 
@@ -266,8 +259,7 @@
 
       setButtonLoading(btn, true);
 
-      // ── Step 1: Create account in Supabase ────────────────
-      const { data, error } = await authSignUp(name, email, pwd);
+      const { data, error, requiresOTP } = await authSignUp(name, email, pwd);
 
       if (error) {
         setButtonLoading(btn, false);
@@ -280,28 +272,26 @@
       }
 
       pendingEmail = email;
-      pendingName  = name;
-
-      // ── Step 2: Generate OTP and send via EmailJS ─────────
-      const { success: emailSent, error: emailError } = await generateAndSendOTP(email, name);
-
       setButtonLoading(btn, false);
 
-      if (emailError) {
-        Toast.error(emailError);
-        return;
+      if (requiresOTP) {
+        Toast.info('Check your email for the verification code.');
+        showOTPStep(email);
+      } else {
+        // Email confirmation disabled in Supabase — direct login
+        Toast.success('Account created! Redirecting...');
+        showSuccessStep();
+        setTimeout(async () => { await redirectByRole(data.user); }, 2000);
       }
-
-      Toast.info('Check your email for the 6-digit verification code.');
-      showOTPStep(email);
     });
 
     // ── Show OTP step ──────────────────────────────────────
     function showOTPStep(email) {
-      document.getElementById('stepRegister').style.display  = 'none';
-      document.getElementById('stepOTP').style.display       = 'block';
-      document.getElementById('otpEmailDisplay').textContent = email;
+      document.getElementById('stepRegister').style.display    = 'none';
+      document.getElementById('stepOTP').style.display         = 'block';
+      document.getElementById('otpEmailDisplay').textContent   = email;
 
+      // Update step indicator
       document.getElementById('step1Dot').classList.remove('active');
       document.getElementById('step1Dot').classList.add('done');
       document.getElementById('step2Dot').classList.add('active');
@@ -312,9 +302,9 @@
     }
 
     function showSuccessStep() {
-      document.getElementById('stepOTP').style.display      = 'none';
+      document.getElementById('stepOTP').style.display     = 'none';
       document.getElementById('stepRegister').style.display = 'none';
-      document.getElementById('stepSuccess').style.display  = 'block';
+      document.getElementById('stepSuccess').style.display = 'block';
     }
 
     // ── OTP Input — 6 boxes with auto-advance ─────────────
@@ -322,11 +312,13 @@
       const inputs = document.querySelectorAll('.otp-input');
 
       inputs.forEach((input, i) => {
+        // Remove error state on focus
         input.addEventListener('focus', () => {
           inputs.forEach(inp => inp.classList.remove('otp-error'));
           document.getElementById('otpErrorMsg').style.display = 'none';
         });
 
+        // Only allow digits
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Backspace') {
             if (!input.value && i > 0) {
@@ -337,7 +329,7 @@
               input.classList.remove('otp-filled');
             }
           }
-          if (e.key === 'ArrowLeft'  && i > 0)                { e.preventDefault(); inputs[i - 1].focus(); }
+          if (e.key === 'ArrowLeft'  && i > 0) { e.preventDefault(); inputs[i - 1].focus(); }
           if (e.key === 'ArrowRight' && i < inputs.length - 1) { e.preventDefault(); inputs[i + 1].focus(); }
         });
 
@@ -350,6 +342,7 @@
             if (i < inputs.length - 1) {
               inputs[i + 1].focus();
             } else {
+              // All filled — auto-trigger verify
               const code = Array.from(inputs).map(inp => inp.value).join('');
               if (code.length === 6) triggerOTPVerify();
             }
@@ -358,6 +351,7 @@
           }
         });
 
+        // Paste handler
         input.addEventListener('paste', (e) => {
           e.preventDefault();
           const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
@@ -387,31 +381,24 @@
 
       setButtonLoading(btn, true);
 
-      // Verify against EmailJS OTP stored in sessionStorage
-      const { valid, reason } = verifyStoredOTP(pendingEmail, code);
+      const { data, error } = await authVerifySignupOTP(pendingEmail, code);
 
-      if (!valid) {
+      if (error) {
         setButtonLoading(btn, false);
         inputs.forEach(i => i.classList.add('otp-error'));
-        document.getElementById('otpErrorText').textContent = reason;
-        document.getElementById('otpErrorMsg').style.display = 'flex';
+        const errBox  = document.getElementById('otpErrorMsg');
+        const errText = document.getElementById('otpErrorText');
+        errText.textContent = error.message?.includes('expired')
+          ? 'Code has expired. Please request a new one.'
+          : 'Invalid code. Please check and try again.';
+        errBox.style.display = 'flex';
         return;
       }
-
-      // OTP valid — try to get Supabase session
-      const { data: sessionData, error: signInErr } = await authSignInAfterVerify(pendingEmail);
 
       setButtonLoading(btn, false);
-
-      if (signInErr) {
-        Toast.success('Email verified! Please sign in to continue.');
-        setTimeout(() => { window.location.href = APP_ROUTES.login; }, 2000);
-        return;
-      }
-
       Toast.success('Email verified successfully!');
       showSuccessStep();
-      setTimeout(async () => { await redirectByRole(sessionData?.user); }, 1800);
+      setTimeout(async () => { await redirectByRole(data.user); }, 1800);
     }
 
     document.getElementById('verifyOTPBtn').addEventListener('click', triggerOTPVerify);
@@ -423,7 +410,7 @@
       const wrap = document.getElementById('otpCountdown');
       let remaining = seconds;
 
-      btn.disabled       = true;
+      btn.disabled    = true;
       wrap.style.display = 'inline';
       tick.textContent   = remaining;
 
@@ -441,15 +428,12 @@
 
     // ── Resend OTP ─────────────────────────────────────────
     document.getElementById('resendOTPBtn').addEventListener('click', async () => {
-      const { error } = await generateAndSendOTP(pendingEmail, pendingName);
+      const { error } = await authResendOTP(pendingEmail, 'signup');
       if (error) {
-        Toast.error(error || 'Could not resend code. Please try again.');
+        Toast.error('Could not resend code. Please try again.');
       } else {
         Toast.info('New code sent — check your inbox.');
-        document.querySelectorAll('.otp-input').forEach(i => {
-          i.value = '';
-          i.classList.remove('otp-filled', 'otp-error');
-        });
+        document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('otp-filled','otp-error'); });
         document.getElementById('otpErrorMsg').style.display = 'none';
         startResendCountdown(60);
         document.querySelector('.otp-input').focus();
