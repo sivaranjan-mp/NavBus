@@ -21,6 +21,13 @@ async function authSignUp(name, email, password) {
 
   if (error) return { error };
 
+  // Supabase returns 200 with a fake user (no identities) when the email
+  // is already registered and "Confirm email" is disabled.
+  // Detect this and surface it as a proper error.
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    return { error: { message: 'already registered' } };
+  }
+
   // Profile row is auto-created by Supabase trigger (see schema.sql).
   // Fallback: manually insert if trigger not set up yet.
   if (data?.user) {

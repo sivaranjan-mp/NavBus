@@ -19,10 +19,10 @@
    ============================================================ */
 
 // ── ✏️  FILL THESE IN ────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY          = 'iT9KnA4H6VqidKTRd';
-const EMAILJS_SERVICE_ID          = 'service_33ks6of';
-const EMAILJS_SIGNUP_TEMPLATE_ID  = 'template_sxq7pcr';
-const EMAILJS_RESET_TEMPLATE_ID   = 'template_sxq7pcr';
+const EMAILJS_PUBLIC_KEY          = 'YOUR_EMAILJS_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID          = 'YOUR_SERVICE_ID';
+const EMAILJS_SIGNUP_TEMPLATE_ID  = 'YOUR_SIGNUP_TEMPLATE_ID';
+const EMAILJS_RESET_TEMPLATE_ID   = 'YOUR_RESET_TEMPLATE_ID';
 // ────────────────────────────────────────────────────────────
 
 const OTP_EXPIRY_MS  = 10 * 60 * 1000; // 10 minutes
@@ -61,6 +61,18 @@ function generateOTP() {
 
 // ── Send OTP via EmailJS ──────────────────────────────────────
 async function _sendViaEmailJS(templateId, templateParams) {
+  // Guard: catch unconfigured keys early with a helpful message
+  if (
+    !EMAILJS_PUBLIC_KEY || EMAILJS_PUBLIC_KEY === 'YOUR_EMAILJS_PUBLIC_KEY' ||
+    !EMAILJS_SERVICE_ID || EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' ||
+    !templateId         || templateId.startsWith('YOUR_')
+  ) {
+    throw new Error(
+      '[NavBus] EmailJS is not configured. ' +
+      'Please fill in EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, and template IDs in auth.emailjs.js'
+    );
+  }
+
   // Lazy-load EmailJS SDK if not already loaded
   if (typeof emailjs === 'undefined') {
     await new Promise((resolve, reject) => {

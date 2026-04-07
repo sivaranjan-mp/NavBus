@@ -266,7 +266,12 @@
 
       if (error) {
         setButtonLoading(btn, false);
-        if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+        if (
+          error.message?.toLowerCase().includes('already registered') ||
+          error.message?.toLowerCase().includes('already exists') ||
+          error.message?.toLowerCase().includes('user already registered') ||
+          error.status === 422
+        ) {
           showFieldError('regEmail', 'This email is already registered. Try signing in.');
         } else {
           Toast.error(error.message || 'Registration failed. Please try again.');
