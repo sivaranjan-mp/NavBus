@@ -19,10 +19,10 @@
    ============================================================ */
 
 // ── ✏️  FILL THESE IN ────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY          = 'YOUR_EMAILJS_PUBLIC_KEY';
-const EMAILJS_SERVICE_ID          = 'YOUR_SERVICE_ID';
-const EMAILJS_SIGNUP_TEMPLATE_ID  = 'YOUR_SIGNUP_TEMPLATE_ID';
-const EMAILJS_RESET_TEMPLATE_ID   = 'YOUR_RESET_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY          = 'iT9KnA4H6VqidKTRd';
+const EMAILJS_SERVICE_ID          = 'service_33ks6of';
+const EMAILJS_SIGNUP_TEMPLATE_ID  = 'template_sxq7pcr';
+const EMAILJS_RESET_TEMPLATE_ID   = 'template_sxq7pcr';
 // ────────────────────────────────────────────────────────────
 
 const OTP_EXPIRY_MS  = 10 * 60 * 1000; // 10 minutes
