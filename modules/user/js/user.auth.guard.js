@@ -1,0 +1,49 @@
+/* ============================================================
+   NavBus — User Auth Guard
+   Protects all user pages, redirects unauthenticated users.
+   Stores session and profile in window.NAVBUS_USER.
+   Exposes window.NAVBUS_USER_READY (Promise) so other scripts
+   can await user data without fragile setTimeout hacks.
+   ============================================================ */
+
+window.NAVBUS_USER_READY = (async function guardUserPage() {
+  const { data: { session }, error } = await NAVBUS_DB.auth.getSession();
+
+  if (!session) {
+    window.location.replace('../auth/login.html');
+    return null;
+  }
+
+  // Load profile from correct table (profiles, not users)
+  const { data: profile } = await NAVBUS_DB
+    .from('profiles')
+    .select('id, name, email, role')
+    .eq('id', session.user.id)
+    .single();
+
+  const user = {
+    id:        session.user.id,
+    name:      profile?.name  || session.user.user_metadata?.name  || 'Passenger',
+    email:     profile?.email || session.user.email || '',
+    role:      profile?.role  || session.user.user_metadata?.role  || 'user',
+    createdAt: session.user.created_at || null,
+  };
+
+  // Store globally
+  window.NAVBUS_USER = user;
+
+  // Populate header avatar / greeting (on home.html, map.html, etc.)
+  const avatarEl   = document.getElementById('userAvatar');
+  const greetingEl = document.getElementById('userGreeting');
+  const nameEl     = document.getElementById('userName');
+
+  const firstName = user.name.split(' ')[0];
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  if (avatarEl)   avatarEl.textContent   = user.name.slice(0, 2).toUpperCase();
+  if (greetingEl) greetingEl.textContent = greeting + ',';
+  if (nameEl)     nameEl.innerHTML       = `${firstName} <span>👋</span>`;
+
+  return user;
+})();

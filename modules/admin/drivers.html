@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Drivers</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/admin.layout.css"/>
+  <style>
+    .driver-avatar { width:38px;height:38px;border-radius:50%;background:var(--bg-tertiary);border:1.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:0.75rem;font-weight:700;color:var(--gold);flex-shrink:0; }
+    .driver-name-cell { display:flex;align-items:center;gap:10px; }
+    .status-badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em; }
+    .status-active { background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.2); }
+    .status-inactive { background:rgba(156,163,175,0.12);color:#9ca3af;border:1px solid rgba(156,163,175,0.2); }
+    .status-onleave { background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.2); }
+    .empty-state { text-align:center;padding:60px 20px;color:var(--text-muted); }
+    .empty-state-icon { font-size:2.5rem;margin-bottom:12px; }
+  </style>
+</head>
+<body>
+<div class="admin-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <a href="dashboard.html" class="sidebar-logo">
+            <img src="../../assets/logo.png" alt="NavBus" class="sidebar-logo-img"/>
+    </a>
+    <nav class="sidebar-nav">
+      <span class="sidebar-section-label">Main</span>
+      <a href="dashboard.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="buses.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Fleet / Buses
+      </a>
+      <a href="routes.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        Routes
+      </a>
+      <a href="drivers.html" class="sidebar-link active">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Drivers
+      </a>
+      <span class="sidebar-section-label">Monitoring</span>
+      <a href="live-map.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Live Map
+      </a>
+
+      <a href="alerts.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Alerts
+      </a>
+      <a href="reports.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Reports
+      </a>
+      <a href="complaints.html" class="sidebar-link"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Complaints<span class="sidebar-badge" id="sidebarComplaintCount">0</span></a>
+
+      <span class="sidebar-section-label">System</span>
+      <a href="users.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+      </a>
+      <a href="settings.html" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-status-bar">
+        <div class="sidebar-live-dot"></div>
+        <span class="sidebar-live-label">All Systems Online</span>
+      </div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">AD</div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-user-name" id="sidebarUserName">Administrator</span>
+          <span class="sidebar-user-role">Admin</span>
+          <span class="sidebar-user-email" id="sidebarUserEmail" style="font-size:0.6rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:block;"></span>
+        </div>
+        <button class="sidebar-logout-btn" id="logoutBtn" title="Sign out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-body">
+    <header class="admin-header">
+      <div class="header-left">
+        <button class="header-menu-btn" id="headerMenuBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="header-breadcrumb">
+          <a href="dashboard.html" class="breadcrumb-item">Dashboard</a>
+          <span class="breadcrumb-separator">›</span>
+          <span class="breadcrumb-item current">Drivers</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-time">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--success);animation:livePulse 1.8s infinite;flex-shrink:0;"></div>
+          <span id="headerClock">00:00:00</span>
+        </div>
+        <a href="alerts.html" class="header-icon-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1 class="page-title"><span class="page-title-accent"></span>Drivers</h1>
+          <p class="page-subtitle">Manage driver profiles, assignments, and status</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline btn-md" onclick="location.reload()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.02-9.5"/></svg>
+            Refresh
+          </button>
+          <button class="btn btn-gold btn-md" id="btnAddDriver">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Driver
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon gold">👤</div><div class="stat-info"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Total Drivers</div></div></div>
+        <div class="stat-card"><div class="stat-icon success">🟢</div><div class="stat-info"><div class="stat-value" id="statActive">—</div><div class="stat-label">Active</div></div></div>
+        <div class="stat-card"><div class="stat-icon warning">🌴</div><div class="stat-info"><div class="stat-value" id="statOnLeave">—</div><div class="stat-label">On Leave</div></div></div>
+        <div class="stat-card"><div class="stat-icon danger">⭘</div><div class="stat-info"><div class="stat-value" id="statInactive">—</div><div class="stat-label">Inactive</div></div></div>
+      </div>
+
+      <div class="table-toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrap">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="driverSearch" class="search-input" placeholder="Search name, license, phone…" oninput="filterDrivers()"/>
+          </div>
+          <select id="statusFilter" class="filter-select" onchange="filterDrivers()">
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="on_leave">On Leave</option>
+          </select>
+          <span class="results-count" id="resultsCount">0 drivers</span>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>License No.</th>
+                <th>Phone</th>
+                <th>Assigned Bus</th>
+                <th>Experience</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="driversTableBody">
+              <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">👤</div><p>No drivers found. Add your first driver or connect to the Supabase <code>drivers</code> table.</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Add / Edit Driver Modal ────────────────────────────── -->
+<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+  <div id="driverModal" style="background:var(--bg-secondary);border:1px solid var(--gold-border);border-radius:16px;padding:28px 32px;width:min(520px,95vw);max-height:90vh;overflow-y:auto;position:relative;">
+    <h2 id="modalTitle" style="font-family:var(--font-display);font-size:1.1rem;color:var(--gold);margin-bottom:20px;">Add Driver</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div style="grid-column:1/-1;">
+        <label class="form-label">Full Name *</label>
+        <input id="fName" class="form-input" placeholder="e.g. Ravi Kumar"/>
+      </div>
+      <div>
+        <label class="form-label">Phone *</label>
+        <input id="fPhone" class="form-input" placeholder="+91 98400 00000"/>
+      </div>
+      <div>
+        <label class="form-label">Email</label>
+        <input id="fEmail" class="form-input" type="email" placeholder="driver@example.com"/>
+      </div>
+      <div>
+        <label class="form-label">License Number *</label>
+        <input id="fLicense" class="form-input" placeholder="TN10-2020-0123456"/>
+      </div>
+      <div>
+        <label class="form-label">License Expiry *</label>
+        <input id="fExpiry" class="form-input" type="date"/>
+      </div>
+      <div>
+        <label class="form-label">Joining Date</label>
+        <input id="fJoining" class="form-input" type="date"/>
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="form-label">Notes</label>
+        <textarea id="fNotes" class="form-input" rows="2" placeholder="Any additional notes…" style="resize:vertical;"></textarea>
+      </div>
+      <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;">
+        <input id="fIsActive" type="checkbox" checked style="width:16px;height:16px;accent-color:var(--gold);">
+        <label for="fIsActive" class="form-label" style="margin:0;">Driver is Active</label>
+      </div>
+    </div>
+
+    <div id="formError" style="display:none;color:#f87171;font-size:0.8rem;margin-top:10px;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button id="btnCancelDriver" class="btn btn-outline btn-md">Cancel</button>
+      <button id="btnSaveDriver"   class="btn btn-gold   btn-md">Save Driver</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/admin.auth.guard.js"></script>
+<script src="js/admin.layout.js"></script>
+<script src="js/admin.drivers.js"></script>
+</body>
+</html>

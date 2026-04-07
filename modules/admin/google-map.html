@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Live Fleet Map</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="../map/css/map.google.css"/>
+</head>
+<body style="margin:0;padding:0;overflow:hidden;">
+
+<div class="gmap-shell">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="gmap-panel" id="gmapPanel">
+
+    <!-- Top bar -->
+    <div class="gmap-panel-topbar">
+      <a href="dashboard.html" class="gmap-logo">
+        <svg width="32" height="20" viewBox="0 0 60 32" fill="none">
+          <rect x="2"  y="5"  width="45" height="18" rx="3" stroke="#c9a84c" stroke-width="1.5"/>
+          <rect x="47" y="9"  width="10" height="11" rx="2" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="11" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <circle cx="35" cy="26" r="4" stroke="#c9a84c" stroke-width="1.5"/>
+          <line x1="2" y1="13" x2="47" y2="13" stroke="#c9a84c" stroke-width="0.8" opacity="0.4"/>
+          <rect x="5"  y="7" width="7"  height="5" rx="1" stroke="#c9a84c" stroke-width="0.8"/>
+          <rect x="15" y="7" width="7"  height="5" rx="1" stroke="#c9a84c" stroke-width="0.8"/>
+          <rect x="25" y="7" width="7"  height="5" rx="1" stroke="#c9a84c" stroke-width="0.8"/>
+        </svg>
+        <div>
+          <span class="gmap-logo-name">NAVBUS</span>
+          <span class="gmap-logo-sub">Live Fleet Map</span>
+        </div>
+      </a>
+      <div class="gmap-live-pill">
+        <div class="gmap-live-dot"></div>
+        <span class="gmap-live-text">Live</span>
+      </div>
+    </div>
+
+    <!-- Connection bar -->
+    <div class="gmap-conn-bar connecting" id="gmapConnBar">
+      <span class="gmap-conn-dot"></span>
+      <span id="gmapConnText" style="font-size:0.62rem;">Connecting…</span>
+    </div>
+
+    <!-- Fleet chips -->
+    <div class="gmap-fleet-bar">
+      <div class="gmap-chip all active" data-filter="all">
+        All <span class="gmap-chip-num" id="chipAll">0</span>
+      </div>
+      <div class="gmap-chip online" data-filter="online">
+        <span style="width:5px;height:5px;border-radius:50%;background:#4ade80;animation:gmapPulse 2s infinite;display:inline-block;"></span>
+        Online <span class="gmap-chip-num" id="chipOnline">0</span>
+      </div>
+      <div class="gmap-chip offline" data-filter="offline">
+        Offline <span class="gmap-chip-num" id="chipOffline">0</span>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="gmap-search-wrap">
+      <svg class="gmap-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="gmapSearch" class="gmap-search" placeholder="Search plate, route, device…"/>
+    </div>
+
+    <!-- Bus list -->
+    <div class="gmap-bus-list" id="gmapBusList">
+      <!-- Skeleton -->
+      <div id="gmapSkeleton">
+        ${[1,2,3,4,5].map(() => `
+          <div class="gmap-skeleton-row">
+            <div class="gmap-skel" style="width:34px;height:34px;border-radius:9px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px;">
+              <div class="gmap-skel" style="height:12px;width:65%;border-radius:4px;"></div>
+              <div class="gmap-skel" style="height:10px;width:45%;border-radius:4px;"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Routes section -->
+    <div style="border-top:1px solid rgba(201,168,76,0.08);padding:10px 14px;flex-shrink:0;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.22em;color:rgba(201,168,76,0.4);text-transform:uppercase;margin-bottom:8px;">
+        Route Highlights
+      </div>
+      <div id="routeToggleList" style="display:flex;flex-direction:column;gap:5px;max-height:140px;overflow-y:auto;">
+        <div style="font-size:0.72rem;color:#475569;">Loading routes…</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="gmap-panel-footer">
+      <a href="dashboard.html" class="gmap-back-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Dashboard
+      </a>
+      <div class="gmap-time-display">
+        <div class="gmap-time-dot"></div>
+        <span id="gmapClock" style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#c9a84c;">00:00:00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MAP ═══ -->
+  <div style="flex:1;position:relative;overflow:hidden;">
+
+    <!-- Google Map container -->
+    <div id="navbusGoogleMap" style="width:100%;height:100%;"></div>
+
+    <!-- Mobile panel toggle -->
+    <button class="gmap-panel-toggle" id="gmapPanelToggle">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="gmap-panel-overlay" id="gmapPanelOverlay"></div>
+
+    <!-- HUD chips -->
+    <div class="gmap-hud">
+      <div class="gmap-hud-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span id="gmapHudTime" style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;">00:00:00</span>
+      </div>
+      <div class="gmap-hud-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+        <span id="gmapHudOnline" style="font-family:'JetBrains Mono',monospace;color:#4ade80;font-size:0.65rem;">0</span>
+        <span style="font-size:0.6rem;">online</span>
+      </div>
+      <div class="gmap-hud-chip accent" id="gmapHudSelected" style="display:none;">
+        🚌 <span id="gmapHudPlate">—</span>
+      </div>
+    </div>
+
+    <!-- Right controls -->
+    <div class="gmap-controls">
+      <!-- Zoom -->
+      <button class="gmap-ctrl-btn" id="gmapZoomIn" data-tip="Zoom In">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <button class="gmap-ctrl-btn" id="gmapZoomOut" data-tip="Zoom Out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+
+      <div class="gmap-ctrl-divider"></div>
+
+      <!-- Fit all -->
+      <button class="gmap-ctrl-btn" id="gmapFitAll" data-tip="Fit All Buses">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>
+        </svg>
+      </button>
+
+      <!-- Tamil Nadu reset -->
+      <button class="gmap-ctrl-btn" id="gmapResetTN" data-tip="Tamil Nadu View">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+      </button>
+
+      <!-- Follow selected -->
+      <button class="gmap-ctrl-btn" id="gmapFollow" data-tip="Follow Bus">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+      </button>
+
+      <div class="gmap-ctrl-divider"></div>
+
+      <!-- Map style buttons -->
+      <button class="gmap-ctrl-btn active" data-style="dark" data-tip="Dark Map" id="styleDark">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="gmap-ctrl-btn" data-style="satellite" data-tip="Satellite" id="styleSat">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a10 10 0 0 0 0 20h.44A10 10 0 0 0 12.22 2z"/>
+        </svg>
+      </button>
+      <button class="gmap-ctrl-btn" data-style="roads" data-tip="Road Map" id="styleRoads">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><polyline points="8 8 12 4 16 8"/><polyline points="16 16 12 20 8 16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Route legend -->
+    <div class="gmap-route-legend" id="gmapLegend">
+      <div class="gmap-legend-title">Active Routes</div>
+      <div id="gmapLegendItems"></div>
+    </div>
+
+    <!-- Selected bus info card -->
+    <div class="gmap-info-card" id="gmapInfoCard">
+      <div class="gmap-info-card-inner">
+        <div class="gmap-info-top-line"></div>
+        <div class="gmap-info-body">
+
+          <!-- Plate -->
+          <div class="gmap-info-plate" id="infoPlate">—</div>
+          <div class="gmap-info-sep"></div>
+
+          <!-- Stats -->
+          <div class="gmap-info-stats">
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Speed</span>
+              <span class="gmap-info-value gold" id="infoSpeed">— km/h</span>
+            </div>
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Status</span>
+              <span class="gmap-info-value" id="infoStatus">—</span>
+            </div>
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Route</span>
+              <span class="gmap-info-value muted" id="infoRoute">—</span>
+            </div>
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Heading</span>
+              <span class="gmap-info-value" id="infoHeading">—</span>
+            </div>
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Driver</span>
+              <span class="gmap-info-value muted" id="infoDriver">—</span>
+            </div>
+            <div class="gmap-info-stat">
+              <span class="gmap-info-label">Last Ping</span>
+              <span class="gmap-info-value green" id="infoLastPing">—</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="gmap-info-actions">
+            <a href="#" class="gmap-action-btn outline" id="infoRouteBtn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+              </svg>
+              Route
+            </a>
+            <a href="#" class="gmap-action-btn gold" id="infoMonitorBtn">
+              Monitor →
+            </a>
+            <button class="gmap-close-btn" id="gmapInfoClose">✕</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end map wrapper -->
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+
+<!-- Auth guard -->
+<script>
+(async () => {
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
+  if (!session) { window.location.replace('../auth/login.html'); return; }
+  if (session.user?.user_metadata?.role !== 'admin') {
+    window.location.replace('../user/home.html');
+  }
+})();
+</script>
+
+<!-- Map modules -->
+<script src="../map/js/map.google.js"></script>
+<script src="../map/js/map.markers.js"></script>
+<script src="../map/js/map.routes.js"></script>
+<script src="../map/js/map.realtime.google.js"></script>
+
+<!-- Google Maps API — replace YOUR_API_KEY -->
+<script>
+window.initNavBusGoogleMap = initApp;
+</script>
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initNavBusGoogleMap&region=IN&language=en">
+</script>
+
+<script>
+/* ============================================================
+   NavBus Google Map — Page Controller
+   Full fleet tracking with Tamil Nadu map
+   ============================================================ */
+
+let _allBuses      = [];
+let _busStateMap   = new Map();  // device_id → bus
+let _selectedDevId = null;
+let _following     = false;
+let _followTimer   = null;
+let _currentFilter = 'all';
+
+// ── Called by Google Maps callback ────────────────────────────
+async function initApp() {
+  console.log('[NavBus] Google Maps loaded ✓');
+
+  // 1. Init map
+  const map = NavBusGoogleMap.init('navbusGoogleMap', {
+    center: NavBusGoogleMap.TN_CENTER,
+    zoom: 8,
+  });
+
+  // 2. Init marker manager
+  NavBusMarkers.init(map, _onBusSelected);
+
+  // 3. Init route manager
+  NavBusRoutes.init(map);
+
+  // 4. Load fleet data
+  await _loadFleet();
+
+  // 5. Start realtime subscription
+  await NavBusRealtimeGoogle.start({
+    onGPS:        _onGPSUpdate,
+    onConnect:    () => console.log('[NavBus] Realtime connected'),
+    onDisconnect: () => console.log('[NavBus] Realtime disconnected'),
+  });
+
+  // 6. Wire controls
+  _wireControls();
+
+  // 7. Start clock
+  _startClock();
+
+  // 8. Heartbeat — mark stale buses offline every 30s
+  setInterval(_checkStale, 30_000);
+}
+
+// ── Load all fleet data ───────────────────────────────────────
+async function _loadFleet() {
+  const { data: buses, error } = await NAVBUS_DB
+    .from('buses')
+    .select(`
+      id, device_id, number_plate, bus_name, bus_model,
+      bus_type, capacity, status, is_active,
+      routes(id, route_number, name, origin, destination),
+      drivers(id, name, phone)
+    `)
+    .eq('is_active', true)
+    .order('number_plate');
+
+  if (error || !buses) {
+    console.error('[NavBus] Fleet load failed:', error?.message);
+    return;
+  }
+
+  // Get latest GPS per bus
+  const deviceIds = buses.map(b => b.device_id);
+  const { data: gpsRows } = await NAVBUS_DB
+    .from('bus_status')
+    .select('device_id, latitude, longitude, speed_kmh, heading_deg, recorded_at')
+    .in('device_id', deviceIds)
+    .order('recorded_at', { ascending: false });
+
+  const gpsMap = {};
+  (gpsRows || []).forEach(g => {
+    if (!gpsMap[g.device_id]) gpsMap[g.device_id] = g;
+  });
+
+  _allBuses = buses.map(bus => {
+    const gps   = gpsMap[bus.device_id];
+    const stale = !gps || (Date.now() - new Date(gps.recorded_at).getTime()) > 90_000;
+    const b = {
+      ...bus,
+      latitude:    gps?.latitude   ?? null,
+      longitude:   gps?.longitude  ?? null,
+      speed_kmh:   gps?.speed_kmh  ?? 0,
+      heading_deg: gps?.heading_deg ?? 0,
+      _lastPing:   gps ? new Date(gps.recorded_at) : null,
+      is_live:     !stale && bus.status === 'online',
+    };
+    if (!stale) b.status = 'online';
+    _busStateMap.set(bus.device_id, b);
+    return b;
+  });
+
+  document.getElementById('gmapSkeleton')?.remove();
+
+  // Place markers for buses with GPS
+  _allBuses.forEach(bus => {
+    if (bus.latitude != null) {
+      NavBusMarkers.upsert(bus);
+    }
+  });
+
+  // Fit map
+  setTimeout(() => {
+    if (NavBusMarkers.count() > 0) NavBusMarkers.fitAll();
+  }, 500);
+
+  // Render panel list
+  _renderBusList(_allBuses);
+  _updateCounts();
+
+  // Load routes list for toggle panel
+  await _loadRoutesList();
+
+  console.log(`[NavBus] Fleet loaded: ${_allBuses.length} buses, ${_allBuses.filter(b=>b.is_live).length} online`);
+}
+
+// ── Handle GPS update from Realtime ──────────────────────────
+function _onGPSUpdate(gps) {
+  const bus = _busStateMap.get(gps.device_id);
+  if (!bus) return; // Unknown device
+
+  // Update state
+  bus.latitude    = gps.latitude;
+  bus.longitude   = gps.longitude;
+  bus.speed_kmh   = gps.speed_kmh   || 0;
+  bus.heading_deg = gps.heading_deg || 0;
+  bus._lastPing   = new Date(gps.recorded_at || Date.now());
+  bus.status      = 'online';
+  bus.is_live     = true;
+  _busStateMap.set(gps.device_id, bus);
+
+  // Update marker with smooth animation
+  NavBusMarkers.upsert(bus);
+
+  // Flash bus card in list
+  const cardEl = document.getElementById(`busrow-${_safeId(gps.device_id)}`);
+  if (cardEl) {
+    _updateBusRow(cardEl, bus);
+    cardEl.style.background = 'rgba(201,168,76,0.1)';
+    setTimeout(() => { cardEl.style.background = ''; }, 900);
+  } else {
+    // Bus just came online — re-render list
+    _renderBusList(_getFilteredBuses());
+  }
+
+  // Update info card if this bus is selected
+  if (_selectedDevId === gps.device_id) {
+    _updateInfoCard(bus);
+  }
+
+  // Follow mode
+  if (_following && _selectedDevId === gps.device_id) {
+    NavBusGoogleMap.flyTo(gps.latitude, gps.longitude, NavBusGoogleMap.getInstance().getZoom());
+  }
+
+  _updateCounts();
+}
+
+// ── Bus selected via marker click ────────────────────────────
+function _onBusSelected(deviceId, bus) {
+  _selectedDevId = deviceId;
+
+  // Highlight card
+  document.querySelectorAll('.gmap-bus-row').forEach(r => r.classList.remove('active'));
+  document.getElementById(`busrow-${_safeId(deviceId)}`)?.classList.add('active');
+
+  // Show info card
+  _updateInfoCard(bus);
+  document.getElementById('gmapInfoCard')?.classList.add('visible');
+
+  // Update HUD
+  document.getElementById('gmapHudSelected')?.style.setProperty('display', 'flex');
+  document.getElementById('gmapHudPlate').textContent = bus.number_plate;
+
+  // Pan to bus
+  if (bus.latitude != null) {
+    NavBusGoogleMap.flyTo(bus.latitude, bus.longitude, 14);
+  }
+
+  // Pre-draw route if available
+  if (bus.routes?.id) {
+    NavBusRoutes.drawRoute(bus.routes.id);
+    _updateLegend();
+  }
+}
+
+// ── Update info card content ──────────────────────────────────
+function _updateInfoCard(bus) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+
+  set('infoPlate',   bus.number_plate);
+  set('infoSpeed',   `${Math.round(bus.speed_kmh || 0)} km/h`);
+  set('infoHeading', bus.heading_deg != null ? `${_cardinal(bus.heading_deg)} ${Math.round(bus.heading_deg)}°` : '—');
+  set('infoRoute',   bus.routes ? `${bus.routes.route_number} — ${bus.routes.name}` : '—');
+  set('infoDriver',  bus.drivers?.name || '—');
+  set('infoLastPing', bus._lastPing ? _timeAgo(bus._lastPing) : 'No GPS');
+
+  const statusEl = document.getElementById('infoStatus');
+  if (statusEl) {
+    const isOnline = bus.is_live || bus.status === 'online';
+    statusEl.textContent = isOnline ? 'Online' : 'Offline';
+    statusEl.style.color  = isOnline ? '#4ade80' : '#475569';
+  }
+
+  // Monitor link
+  const monitorBtn = document.getElementById('infoMonitorBtn');
+  if (monitorBtn) monitorBtn.href = `../user/track.html?id=${bus.id}`;
+
+  // Route toggle button
+  const routeBtn = document.getElementById('infoRouteBtn');
+  if (routeBtn && bus.routes?.id) {
+    routeBtn.onclick = (e) => {
+      e.preventDefault();
+      NavBusRoutes.toggleRoute(bus.routes.id);
+      _updateLegend();
+    };
+  }
+}
+
+// ── Render bus list panel ─────────────────────────────────────
+function _renderBusList(buses) {
+  const listEl = document.getElementById('gmapBusList');
+  if (!listEl) return;
+
+  // Sort: online first
+  const sorted = [...buses].sort((a, b) => {
+    if (a.is_live && !b.is_live) return -1;
+    if (!a.is_live && b.is_live) return 1;
+    return a.number_plate.localeCompare(b.number_plate);
+  });
+
+  if (sorted.length === 0) {
+    listEl.innerHTML = `
+      <div class="gmap-empty">
+        <div class="gmap-empty-icon">🚌</div>
+        <div class="gmap-empty-text">No buses match the filter.</div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = sorted.map(bus => _buildBusRow(bus)).join('');
+
+  // Attach click listeners
+  listEl.querySelectorAll('.gmap-bus-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const devId = row.dataset.deviceId;
+      const bus   = _busStateMap.get(devId);
+      if (!bus) return;
+      NavBusMarkers.focusBus(devId, 15);
+      _onBusSelected(devId, bus);
+    });
+  });
+}
+
+// ── Build bus row HTML ────────────────────────────────────────
+function _buildBusRow(bus) {
+  const cls    = bus.is_live ? 'online' : 'offline';
+  const speed  = bus.is_live ? `${Math.round(bus.speed_kmh || 0)} km/h` : '—';
+  const seen   = bus._lastPing ? _timeAgo(bus._lastPing) : 'No GPS';
+  const route  = bus.routes?.route_number || '—';
+  const isActive = _selectedDevId === bus.device_id;
+
+  return `
+    <div class="gmap-bus-row ${isActive ? 'active' : ''}"
+      data-device-id="${bus.device_id}"
+      id="busrow-${_safeId(bus.device_id)}">
+      <div class="gmap-bus-icon ${cls}">
+        🚌
+        <span class="gmap-bus-ring ${cls}"></span>
+      </div>
+      <div class="gmap-bus-info">
+        <span class="gmap-bus-plate">${_esc(bus.number_plate)}</span>
+        <span class="gmap-bus-route">${_esc(route)} · ${_esc(bus.bus_type || bus.bus_model || '—')}</span>
+      </div>
+      <div class="gmap-bus-meta">
+        <span class="gmap-bus-speed">${bus.is_live ? speed : bus.status}</span>
+        <span class="gmap-bus-time">${seen}</span>
+      </div>
+    </div>`;
+}
+
+// ── Update a single row without full re-render ─────────────────
+function _updateBusRow(rowEl, bus) {
+  const speedEl = rowEl.querySelector('.gmap-bus-speed');
+  const timeEl  = rowEl.querySelector('.gmap-bus-time');
+  if (speedEl) speedEl.textContent = `${Math.round(bus.speed_kmh || 0)} km/h`;
+  if (timeEl)  timeEl.textContent  = 'Just now';
+}
+
+// ── Load routes for toggle section ───────────────────────────
+async function _loadRoutesList() {
+  const { data: routes } = await NAVBUS_DB
+    .from('routes')
+    .select('id, route_number, name')
+    .eq('is_active', true)
+    .order('route_number')
+    .limit(12);
+
+  const el = document.getElementById('routeToggleList');
+  if (!el || !routes) return;
+
+  el.innerHTML = routes.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 2px;cursor:pointer;border-radius:6px;transition:background 0.15s;"
+      id="routetog-${r.id}"
+      onmouseover="this.style.background='rgba(201,168,76,0.05)'"
+      onmouseout="this.style.background=''"
+      onclick="toggleRouteUI('${r.id}', '${_esc(r.route_number)}')">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#c9a84c;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.18);padding:1px 6px;border-radius:4px;">
+          ${_esc(r.route_number)}
+        </span>
+        <span style="font-size:0.72rem;color:#6e6354;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">
+          ${_esc(r.name)}
+        </span>
+      </div>
+      <div style="width:22px;height:12px;border-radius:6px;background:rgba(71,85,105,0.3);border:1px solid rgba(71,85,105,0.3);transition:all 0.2s;flex-shrink:0;"
+        id="routetog-switch-${r.id}">
+      </div>
+    </div>`).join('');
+}
+
+// ── Toggle route + update switch UI ──────────────────────────
+async function toggleRouteUI(routeId, routeNum) {
+  const active  = NavBusRoutes.isActive(routeId);
+  const switchEl = document.getElementById(`routetog-switch-${routeId}`);
+
+  if (active) {
+    NavBusRoutes.removeRoute(routeId);
+    if (switchEl) {
+      switchEl.style.background = 'rgba(71,85,105,0.3)';
+      switchEl.style.borderColor = 'rgba(71,85,105,0.3)';
+    }
+  } else {
+    const result = await NavBusRoutes.drawRoute(routeId);
+    if (result && switchEl) {
+      switchEl.style.background  = result.color.line;
+      switchEl.style.borderColor = result.color.line;
+      switchEl.style.boxShadow   = `0 0 6px ${result.color.glow}`;
+    }
+    if (result?.stops?.length) NavBusRoutes.fitRoute(routeId);
+  }
+  _updateLegend();
+}
+
+// ── Update route legend ───────────────────────────────────────
+function _updateLegend() {
+  const legend  = document.getElementById('gmapLegend');
+  const items   = NavBusRoutes.getLegend();
+  const itemsEl = document.getElementById('gmapLegendItems');
+
+  if (!legend || !itemsEl) return;
+
+  if (items.length === 0) {
+    legend.classList.remove('visible');
+    return;
+  }
+
+  legend.classList.add('visible');
+  itemsEl.innerHTML = items.map(i => `
+    <div class="gmap-legend-item">
+      <div class="gmap-legend-line" style="background:${i.color};box-shadow:0 0 4px ${i.color}60;"></div>
+      <span class="gmap-legend-label">${_esc(i.label)} <span style="color:#3d3830;">(${i.stops} stops)</span></span>
+    </div>`).join('');
+}
+
+// ── Filter chips ──────────────────────────────────────────────
+document.querySelectorAll('.gmap-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.gmap-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    _currentFilter = chip.dataset.filter;
+    _renderBusList(_getFilteredBuses());
+  });
+});
+
+function _getFilteredBuses() {
+  const all = Array.from(_busStateMap.values()).filter(b => b.is_active);
+  if (_currentFilter === 'online')  return all.filter(b => b.is_live);
+  if (_currentFilter === 'offline') return all.filter(b => !b.is_live);
+  return all;
+}
+
+// ── Search ────────────────────────────────────────────────────
+document.getElementById('gmapSearch')?.addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const buses = _getFilteredBuses().filter(b =>
+    !q ||
+    b.number_plate?.toLowerCase().includes(q) ||
+    b.device_id?.toLowerCase().includes(q)    ||
+    b.routes?.route_number?.toLowerCase().includes(q) ||
+    b.bus_name?.toLowerCase().includes(q)
+  );
+  _renderBusList(buses);
+});
+
+// ── Update counts ─────────────────────────────────────────────
+function _updateCounts() {
+  const all    = Array.from(_busStateMap.values()).filter(b => b.is_active);
+  const online = all.filter(b => b.is_live).length;
+  const offline = all.filter(b => !b.is_live).length;
+
+  _setEl('chipAll',    all.length);
+  _setEl('chipOnline', online);
+  _setEl('chipOffline', offline);
+  _setEl('gmapHudOnline', online);
+}
+
+// ── Stale check ───────────────────────────────────────────────
+function _checkStale() {
+  _busStateMap.forEach((bus, deviceId) => {
+    if (bus.is_live && bus._lastPing) {
+      const age = Date.now() - bus._lastPing.getTime();
+      if (age > 90_000) {
+        bus.is_live = false;
+        bus.status  = 'offline';
+        _busStateMap.set(deviceId, bus);
+        NavBusMarkers.upsert(bus);
+        const rowEl = document.getElementById(`busrow-${_safeId(deviceId)}`);
+        if (rowEl) { rowEl.querySelector('.gmap-bus-speed').textContent = 'OFFLINE'; }
+      }
+    }
+  });
+  _updateCounts();
+
+  // Update last-ping displays
+  document.querySelectorAll('.gmap-bus-time').forEach(el => {
+    const rowEl   = el.closest('.gmap-bus-row');
+    const devId   = rowEl?.dataset.deviceId;
+    const bus     = devId ? _busStateMap.get(devId) : null;
+    if (bus?._lastPing) el.textContent = _timeAgo(bus._lastPing);
+  });
+
+  // Update info card if open
+  if (_selectedDevId) {
+    const bus = _busStateMap.get(_selectedDevId);
+    if (bus) {
+      const el = document.getElementById('infoLastPing');
+      if (el) el.textContent = bus._lastPing ? _timeAgo(bus._lastPing) : 'No GPS';
+    }
+  }
+}
+
+// ── Wire controls ─────────────────────────────────────────────
+function _wireControls() {
+  // Zoom
+  document.getElementById('gmapZoomIn')?.addEventListener('click',  () => NavBusGoogleMap.zoomIn());
+  document.getElementById('gmapZoomOut')?.addEventListener('click', () => NavBusGoogleMap.zoomOut());
+
+  // Fit all
+  document.getElementById('gmapFitAll')?.addEventListener('click', () => NavBusMarkers.fitAll());
+
+  // Reset TN
+  document.getElementById('gmapResetTN')?.addEventListener('click', () => NavBusGoogleMap.resetToTamilNadu());
+
+  // Follow
+  const followBtn = document.getElementById('gmapFollow');
+  followBtn?.addEventListener('click', () => {
+    _following = !_following;
+    followBtn.classList.toggle('active', _following);
+    if (!_following && _followTimer) { clearInterval(_followTimer); _followTimer = null; }
+    else if (_following && _selectedDevId) {
+      _followTimer = setInterval(() => {
+        const bus = _busStateMap.get(_selectedDevId);
+        if (bus?.latitude != null) {
+          NavBusGoogleMap.getInstance().panTo({ lat: bus.latitude, lng: bus.longitude });
+        }
+      }, 3000);
+    }
+  });
+
+  // Map styles
+  document.querySelectorAll('[data-style]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      NavBusGoogleMap.setStyle(btn.dataset.style);
+    });
+  });
+
+  // Info card close
+  document.getElementById('gmapInfoClose')?.addEventListener('click', () => {
+    document.getElementById('gmapInfoCard')?.classList.remove('visible');
+    document.getElementById('gmapHudSelected')?.style.setProperty('display', 'none');
+    NavBusMarkers.deselectAll();
+    _selectedDevId = null;
+    _following     = false;
+    document.getElementById('gmapFollow')?.classList.remove('active');
+    clearInterval(_followTimer);
+  });
+
+  // Mobile panel toggle
+  const panel   = document.getElementById('gmapPanel');
+  const overlay = document.getElementById('gmapPanelOverlay');
+  document.getElementById('gmapPanelToggle')?.addEventListener('click', () => {
+    panel?.classList.add('open');
+    overlay?.classList.add('open');
+  });
+  overlay?.addEventListener('click', () => {
+    panel?.classList.remove('open');
+    overlay?.classList.remove('open');
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('gmapInfoClose')?.click();
+      panel?.classList.remove('open');
+      overlay?.classList.remove('open');
+    }
+    if (e.key === '+' || e.key === '=') NavBusGoogleMap.zoomIn();
+    if (e.key === '-') NavBusGoogleMap.zoomOut();
+    if (e.key === 'f' || e.key === 'F') document.getElementById('gmapFitAll')?.click();
+  });
+}
+
+// ── Last-seen ticker (every 10s) ──────────────────────────────
+setInterval(() => {
+  if (_selectedDevId) {
+    const bus = _busStateMap.get(_selectedDevId);
+    const el  = document.getElementById('infoLastPing');
+    if (el && bus?._lastPing) el.textContent = _timeAgo(bus._lastPing);
+  }
+}, 10_000);
+
+// ── Clock ─────────────────────────────────────────────────────
+function _startClock() {
+  const tick = () => {
+    const t = new Date().toTimeString().slice(0, 8);
+    _setEl('gmapClock',   t);
+    _setEl('gmapHudTime', t);
+  };
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function _setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function _esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _safeId(s) {
+  return (s || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function _cardinal(deg) {
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round((deg||0)/45)%8];
+}
+
+function _timeAgo(date) {
+  if (!date) return '—';
+  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (s <  5)  return 'Just now';
+  if (s < 60)  return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  return m < 60 ? `${m}m ago` : `${Math.floor(m/60)}h ago`;
+}
+
+// ── Cleanup ───────────────────────────────────────────────────
+window.addEventListener('beforeunload', () => {
+  NavBusRealtimeGoogle.stop();
+  NavBusRoutes.clearAll();
+});
+</script>
+</body>
+</html>

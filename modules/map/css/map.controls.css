@@ -1,0 +1,116 @@
+/* ============================================================
+   NavBus — Map Controls CSS
+   Custom Leaflet control overrides + layer buttons
+   ============================================================ */
+
+/* ── Base control button ─────────────────────────────────────── */
+.navbus-ctrl {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(8,8,6,0.92);
+  border: 1px solid rgba(201,168,76,0.18);
+  color: #6e6354;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.navbus-ctrl:hover {
+  border-color: rgba(201,168,76,0.4);
+  color: #c9a84c;
+  background: rgba(8,8,6,0.96);
+}
+
+.navbus-ctrl.active {
+  background: rgba(201,168,76,0.14);
+  border-color: #c9a84c;
+  color: #c9a84c;
+}
+
+/* ── Tile layer toggle group ─────────────────────────────────── */
+.tile-toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tile-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: rgba(8,8,6,0.9);
+  border: 1px solid rgba(201,168,76,0.15);
+  color: #6e6354;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+}
+.tile-btn:hover  { border-color: rgba(201,168,76,0.35); color: #b5a98a; }
+.tile-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: #c9a84c; }
+
+/* ── Tooltip on hover ────────────────────────────────────────── */
+.navbus-ctrl::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(8,8,6,0.95);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b5a98a;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+.navbus-ctrl:hover::after { opacity: 1; }
+
+/* ── GPS accuracy ring ───────────────────────────────────────── */
+.accuracy-ring {
+  stroke: rgba(201,168,76,0.25);
+  stroke-width: 1;
+  fill: rgba(201,168,76,0.04);
+}
+
+/* ── Zoom level indicator ────────────────────────────────────── */
+.zoom-indicator {
+  position: absolute;
+  bottom: 20px;
+  right: 16px;
+  z-index: 400;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(201,168,76,0.4);
+  background: rgba(8,8,6,0.7);
+  border: 1px solid rgba(201,168,76,0.1);
+  border-radius: 5px;
+  padding: 3px 8px;
+  pointer-events: none;
+}
+
+/* ── Scale bar override ──────────────────────────────────────── */
+.leaflet-control-scale-line {
+  background: rgba(8,8,6,0.8) !important;
+  border-color: rgba(201,168,76,0.25) !important;
+  color: rgba(201,168,76,0.5) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 10px !important;
+}

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>NavBus — Routes</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="css/user.layout.css"/>
+  <style>
+    .page-hero {
+      padding: 28px 20px 20px;
+    }
+    .page-hero-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem; font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .page-hero-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .search-bar-wrap {
+      padding: 0 20px 20px;
+    }
+    .search-bar {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px;
+      padding: 12px 16px 12px 42px;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .search-bar:focus { border-color: var(--gold-border-2); }
+    .search-bar::placeholder { color: var(--text-muted); }
+    .search-bar-wrap { position: relative; }
+    .search-bar-icon {
+      position: absolute;
+      left: 34px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .route-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .route-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      border-radius: 3px 0 0 3px;
+    }
+    .route-card:hover {
+      border-color: var(--gold-border-2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .route-card-top {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .route-number {
+      font-family: var(--font-mono);
+      font-size: 0.72rem; font-weight: 500;
+      color: var(--gold);
+      background: rgba(201,168,76,0.08);
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      padding: 3px 10px;
+    }
+    .route-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.65rem;
+      color: var(--success);
+      font-family: var(--font-display);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+    .route-status-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: statusPulse 2s infinite;
+    }
+    .route-name {
+      font-size: 0.95rem; font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .route-stops {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .route-stop-name {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      flex: 1;
+    }
+    .route-stop-arrow {
+      color: var(--gold);
+      font-size: 0.8rem;
+    }
+    .route-meta {
+      display: flex; gap: 16px;
+    }
+    .route-meta-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+    .route-meta-item svg { color: var(--gold); opacity: 0.7; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state-title {
+      font-family: var(--font-display);
+      font-size: 0.9rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .empty-state-sub { font-size: 0.78rem; }
+    .skeleton-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .skeleton-block {
+      background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-surface-2) 50%, var(--bg-surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+      height: 12px;
+      margin-bottom: 10px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+<div class="user-shell">
+
+  <!-- HEADER -->
+  <header class="user-header">
+    <a href="home.html" class="user-header-logo">
+      <img src="../../assets/logo.png" alt="NavBus" class="user-header-logo-img"/>
+      <div>
+        <span class="user-header-logo-name">NAVBUS</span>
+        <span class="user-header-logo-sub">Routes</span>
+      </div>
+    </a>
+    <div class="user-header-right">
+      <a href="profile.html" class="user-avatar-btn" id="userAvatar">U</a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="user-main">
+
+    <div class="page-hero page-enter">
+      <div class="page-hero-title">All Routes</div>
+      <div class="page-hero-sub" id="routeCount">Loading routes…</div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar-wrap">
+      <svg class="search-bar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="search-bar" id="routeSearch" placeholder="Search route name or number…"/>
+    </div>
+
+
+    <!-- Routes List -->
+    <div class="user-section">
+      <div id="routesList">
+        <!-- Skeletons -->
+        <div class="skeleton-card">
+          <div class="skeleton-block" style="width:30%"></div>
+          <div class="skeleton-block" style="width:70%"></div>
+          <div class="skeleton-block" style="width:50%"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-block" style="width:25%"></div>
+          <div class="skeleton-block" style="width:80%"></div>
+          <div class="skeleton-block" style="width:55%"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-block" style="width:35%"></div>
+          <div class="skeleton-block" style="width:65%"></div>
+          <div class="skeleton-block" style="width:45%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px;"></div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="user-bottom-nav">
+    <a href="home.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Home</span>
+    </a>
+    <a href="routes.html" class="nav-tab active">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <polygon points="3,6 9,3 15,6 21,3 21,18 15,21 9,18 3,21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Routes</span>
+    </a>
+    <a href="map.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Map</span>
+    </a>
+
+    
+    <a href="schedule.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8"  y1="2" x2="8"  y2="6"/>
+          <line x1="3"  y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Schedule</span>
+    </a>
+    <a href="profile.html" class="nav-tab">
+      <div class="nav-tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="nav-tab-label">Profile</span>
+    </a>
+  </nav>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+<script src="js/user.auth.guard.js"></script>
+<script>
+  let ALL_ROUTES = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadRoutes();
+
+    document.getElementById('routeSearch').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const filtered = q
+        ? ALL_ROUTES.filter(r =>
+            r.route_number?.toLowerCase().includes(q) ||
+            r.name?.toLowerCase().includes(q) ||
+            r.origin?.toLowerCase().includes(q) ||
+            r.destination?.toLowerCase().includes(q)
+          )
+        : ALL_ROUTES;
+      renderRoutes(filtered);
+    });
+  });
+
+  async function loadRoutes() {
+    const { data, error } = await NAVBUS_DB
+      .from('routes')
+      .select('id, route_number, name, origin, destination, total_distance_km, estimated_duration_min, is_active')
+      .order('route_number');
+
+    if (error || !data) {
+      document.getElementById('routesList').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🗺️</div>
+          <div class="empty-state-title">No Routes Found</div>
+          <div class="empty-state-sub">Routes will appear here once added by admin.</div>
+        </div>`;
+      return;
+    }
+
+    ALL_ROUTES = data;
+    document.getElementById('routeCount').textContent =
+      `${data.length} route${data.length !== 1 ? 's' : ''} available`;
+    renderRoutes(data);
+  }
+
+  function renderRoutes(routes) {
+    const el = document.getElementById('routesList');
+
+    if (routes.length === 0) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🔍</div>
+          <div class="empty-state-title">No Routes Found</div>
+          <div class="empty-state-sub">Try a different search term.</div>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = routes.map(r => `
+      <div class="route-card stagger-child" onclick="window.location.href='home.html'">
+        <div class="route-card-top">
+          <span class="route-number">${escHtml(r.route_number)}</span>
+          ${r.is_active
+            ? `<span class="route-status"><span class="route-status-dot"></span>Active</span>`
+            : `<span class="route-status" style="color:var(--text-muted);">Inactive</span>`
+          }
+        </div>
+        <div class="route-name">${escHtml(r.name)}</div>
+        <div class="route-stops">
+          <span class="route-stop-name">${escHtml(r.origin)}</span>
+          <span class="route-stop-arrow">→</span>
+          <span class="route-stop-name" style="text-align:right;">${escHtml(r.destination)}</span>
+        </div>
+        <div class="route-meta">
+          ${r.total_distance_km ? `
+            <div class="route-meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              ${r.total_distance_km} km
+            </div>` : ''}
+          ${r.estimated_duration_min ? `
+            <div class="route-meta-item">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              ~${r.estimated_duration_min} min
+            </div>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    if (!str) return '—';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

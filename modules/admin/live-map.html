@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NavBus — Live Tracking</title>
+  <link rel="stylesheet" href="../../css/variables.css"/>
+  <link rel="stylesheet" href="../../css/reset.css"/>
+  <link rel="stylesheet" href="../../lib/leaflet.css"/>
+  <link rel="stylesheet" href="../tracking/css/tracking.css"/>
+  <link rel="stylesheet" href="../map/css/map.controls.css"/>
+</head>
+<body>
+
+<div class="tracking-shell">
+
+  <!-- ═══ LEFT PANEL — Bus Roster ═══ -->
+  <div class="tracking-panel" id="trackingPanel">
+
+    <!-- Realtime connection bar -->
+    <div class="connection-bar connecting" id="connectionBar">
+      <span class="conn-dot"></span>
+      <span id="connectionText" style="font-size:0.65rem;font-family:var(--font-mono);">Connecting…</span>
+    </div>
+
+    <!-- Panel header -->
+    <div class="tracking-panel-header">
+      <div class="tracking-panel-title">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <!-- Back to dashboard -->
+          <a href="dashboard.html" style="color:var(--text-muted);display:flex;align-items:center;transition:color 0.18s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-muted)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </a>
+          <h2>Fleet</h2>
+        </div>
+        <div class="live-badge">
+          <span class="live-badge-dot"></span>
+          Live
+        </div>
+      </div>
+
+      <!-- Fleet summary chips -->
+      <div class="fleet-chips" id="fleetChips">
+        <div class="fleet-chip all active" data-filter="all">
+          All <span class="fleet-chip-count" id="chipAll">0</span>
+        </div>
+        <div class="fleet-chip online" data-filter="online">
+          <span style="width:5px;height:5px;border-radius:50%;background:#4ade80;animation:livePulse 2s infinite;display:inline-block;"></span>
+          Online <span class="fleet-chip-count" id="chipOnline">0</span>
+        </div>
+        <div class="fleet-chip offline" data-filter="offline">
+          Offline <span class="fleet-chip-count" id="chipOffline">0</span>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="panel-search-wrap">
+        <svg class="panel-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="panelSearch" class="panel-search-input" placeholder="Search plate or route…"/>
+      </div>
+    </div>
+
+    <!-- Bus list -->
+    <div class="bus-list" id="busList">
+      <!-- Skeleton loading -->
+      <div id="busListSkeleton">
+                  <div style="display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:4px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(201,168,76,0.08);margin-bottom:6px;animation:shimmer 1.5s infinite;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,rgba(201,168,76,0.12) 50%,rgba(201,168,76,0.06) 100%);"></div>
+              <div style="height:10px;width:50%;border-radius:4px;background:rgba(201,168,76,0.06);animation:shimmer 1.5s infinite 0.2s;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.04) 0%,rgba(201,168,76,0.08) 50%,rgba(201,168,76,0.04) 100%);"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:4px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(201,168,76,0.08);margin-bottom:6px;animation:shimmer 1.5s infinite;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,rgba(201,168,76,0.12) 50%,rgba(201,168,76,0.06) 100%);"></div>
+              <div style="height:10px;width:50%;border-radius:4px;background:rgba(201,168,76,0.06);animation:shimmer 1.5s infinite 0.2s;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.04) 0%,rgba(201,168,76,0.08) 50%,rgba(201,168,76,0.04) 100%);"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:4px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(201,168,76,0.08);margin-bottom:6px;animation:shimmer 1.5s infinite;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,rgba(201,168,76,0.12) 50%,rgba(201,168,76,0.06) 100%);"></div>
+              <div style="height:10px;width:50%;border-radius:4px;background:rgba(201,168,76,0.06);animation:shimmer 1.5s infinite 0.2s;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.04) 0%,rgba(201,168,76,0.08) 50%,rgba(201,168,76,0.04) 100%);"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:4px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(201,168,76,0.08);margin-bottom:6px;animation:shimmer 1.5s infinite;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,rgba(201,168,76,0.12) 50%,rgba(201,168,76,0.06) 100%);"></div>
+              <div style="height:10px;width:50%;border-radius:4px;background:rgba(201,168,76,0.06);animation:shimmer 1.5s infinite 0.2s;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.04) 0%,rgba(201,168,76,0.08) 50%,rgba(201,168,76,0.04) 100%);"></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 10px;margin-bottom:4px;">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(201,168,76,0.06);border:1px solid var(--gold-border);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="height:12px;width:70%;border-radius:4px;background:rgba(201,168,76,0.08);margin-bottom:6px;animation:shimmer 1.5s infinite;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,rgba(201,168,76,0.12) 50%,rgba(201,168,76,0.06) 100%);"></div>
+              <div style="height:10px;width:50%;border-radius:4px;background:rgba(201,168,76,0.06);animation:shimmer 1.5s infinite 0.2s;background-size:300px;background-image:linear-gradient(90deg,rgba(201,168,76,0.04) 0%,rgba(201,168,76,0.08) 50%,rgba(201,168,76,0.04) 100%);"></div>
+            </div>
+          </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Panel overlay (mobile) -->
+  <div class="tracking-panel-overlay" id="panelOverlay"></div>
+
+  <!-- ═══ MAP AREA ═══ -->
+  <div class="tracking-map-area">
+
+    <!-- Leaflet map -->
+    <div id="trackingMap"></div>
+
+    <!-- HUD bar -->
+    <div class="map-hud-bar">
+      <div class="hud-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="hudTime" style="font-family:var(--font-mono);font-size:0.65rem;">00:00:00</span>
+      </div>
+      <div class="hud-chip active-label" id="hudSelected" style="display:none;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span id="hudSelectedPlate">—</span>
+      </div>
+      <div class="hud-chip">
+        <span id="hudOnlineCount" style="font-family:var(--font-mono);font-size:0.65rem;color:#4ade80;">0</span>
+        <span style="font-size:0.6rem;">online</span>
+      </div>
+    </div>
+
+    <!-- Custom map controls -->
+    <div class="map-controls-row" id="mapControlsRow">
+      <!-- Zoom -->
+      <button class="navbus-ctrl" id="ctrlZoomIn" data-tooltip="Zoom In">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="navbus-ctrl" id="ctrlZoomOut" data-tooltip="Zoom Out">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <div class="map-ctrl-separator"></div>
+
+      <!-- Fit all -->
+      <button class="navbus-ctrl" id="ctrlFitAll" data-tooltip="Fit All Buses">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+
+      <!-- Follow selected -->
+      <button class="navbus-ctrl" id="ctrlFollow" data-tooltip="Follow Bus">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </button>
+
+      <div class="map-ctrl-separator"></div>
+
+      <!-- Tile layer buttons -->
+      <button class="tile-btn active" data-tile="dark" id="ctrlTogglePanel" style="display:none;">☰</button>
+      <button class="tile-btn active" data-tile="dark">Dark</button>
+      <button class="tile-btn" data-tile="satellite">Sat</button>
+      <button class="tile-btn" data-tile="streets">Minimal</button>
+    </div>
+
+    <!-- Mobile panel toggle -->
+    <button class="navbus-ctrl" id="ctrlTogglePanel"
+      style="position:absolute;top:16px;left:16px;z-index:500;display:none;"
+      data-tooltip="Bus List">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <!-- Zoom level indicator -->
+    <div class="zoom-indicator" id="zoomIndicator">Z10</div>
+
+    <!-- No GPS overlay -->
+    <div class="no-gps-overlay" id="noGpsOverlay">
+      <div class="no-gps-icon">📡</div>
+      <div class="no-gps-title">No Active Buses</div>
+      <div class="no-gps-sub">Waiting for GPS data from devices…</div>
+    </div>
+
+    <!-- Selected bus detail overlay -->
+    <div class="bus-detail-overlay" id="busDetailOverlay">
+      <div class="bus-detail-card">
+        <div class="bus-detail-inner">
+
+          <!-- Plate -->
+          <div class="bus-detail-plate" id="detailPlate">—</div>
+          <div class="bus-detail-divider"></div>
+
+          <!-- Stats -->
+          <div class="bus-detail-stats">
+            <div class="detail-stat">
+              <span class="detail-stat-label">Speed</span>
+              <span class="detail-stat-value speed-value" id="detailSpeed">— km/h</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Status</span>
+              <span class="detail-stat-value" id="detailStatus">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Route</span>
+              <span class="detail-stat-value" id="detailRoute">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Driver</span>
+              <span class="detail-stat-value" id="detailDriver">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Heading</span>
+              <span class="detail-stat-value" id="detailHeading">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Last Ping</span>
+              <span class="detail-stat-value" id="detailLastPing">—</span>
+            </div>
+            <div class="detail-stat" style="grid-column: span 2;">
+              <span class="detail-stat-label">Coordinates</span>
+              <span class="detail-stat-value" id="detailCoords" style="font-size:0.75rem;">—</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="bus-detail-actions">
+            <button class="detail-action-btn secondary" id="detailTrailBtn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Trail
+            </button>
+            <a href="#" class="detail-action-btn primary" id="detailViewBtn">
+              Monitor →
+            </a>
+            <button class="detail-close-btn" id="detailCloseBtn">✕</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Scripts — order matters -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../lib/leaflet.js"></script>
+<script src="../../lib/leaflet-rotatedmarker.js"></script>
+<script src="../../js/config.js"></script>
+<script src="../../js/utils.js"></script>
+
+<!-- Auth guard (inline — fast) -->
+<script>
+(async () => {
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
+  if (!session) { window.location.replace('../auth/login.html'); return; }
+  const role = session.user?.user_metadata?.role;
+  if (role !== 'admin') { window.location.replace('../user/home.html'); }
+})();
+</script>
+
+<!-- Tracking modules -->
+<script src="../tracking/js/tracking.bus-state.js"></script>
+<script src="../tracking/js/tracking.status.js"></script>
+<script src="../tracking/js/tracking.marker.js"></script>
+<script src="../tracking/js/tracking.trail.js"></script>
+<script src="../tracking/js/tracking.heartbeat.js"></script>
+<script src="../tracking/js/tracking.realtime.js"></script>
+<script src="../map/js/map.init.js"></script>
+<script src="../map/js/map.controls.js"></script>
+
+<script>
+// ============================================================
+//  NavBus Live Tracking — Page Controller
+// ============================================================
+
+let selectedDeviceId  = null;
+let currentFilter     = 'all';
+let trailVisible      = false;
+let allBusesCache     = [];
+
+// ── Boot sequence ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+
+  // 1. Create Leaflet map
+  const map = MapInit.create('trackingMap', { center: [20.5937, 78.9629], zoom: 5 });
+  TrackingMarker.init(map);
+  TrackingTrail.init(map);
+
+  // 2. Wire map controls
+  MapControls.init();
+
+  // 3. Load all active buses from DB
+  await _loadBuses();
+
+  // 4. Start realtime GPS subscription
+  await TrackingRealtime.start();
+
+  // 5. Start heartbeat (detects stale/offline devices)
+  TrackingHeartbeat.start();
+
+  // 6. Start HUD clock
+  _startClock();
+
+  // 7. Show mobile panel toggle
+  if (window.innerWidth <= 900) {
+    document.getElementById('ctrlTogglePanel').style.display = 'flex';
+  }
+});
+
+// ── Load buses from Supabase ──────────────────────────────────
+async function _loadBuses() {
+  const { data, error } = await NAVBUS_DB
+    .from('buses')
+    .select(`
+      id, device_id, number_plate, bus_name, bus_model,
+      bus_type, capacity, status, is_active,
+      routes   ( id, route_number, name ),
+      drivers  ( id, name, phone )
+    `)
+    .eq('is_active', true)
+    .order('number_plate');
+
+  if (error) {
+    console.error('[LiveMap] Failed to load buses:', error.message);
+    return;
+  }
+
+  const buses = data || [];
+
+  // Load latest GPS for each online bus
+  const { data: latestGPS } = await NAVBUS_DB
+    .from('bus_status')
+    .select('device_id, latitude, longitude, speed_kmh, heading_deg, recorded_at')
+    .in('device_id', buses.map(b => b.device_id))
+    .order('recorded_at', { ascending: false });
+
+  // Attach latest GPS to each bus
+  const gpsMap = {};
+  if (latestGPS) {
+    latestGPS.forEach(g => {
+      // Only keep the FIRST (latest) row per device
+      if (!gpsMap[g.device_id]) gpsMap[g.device_id] = g;
+    });
+  }
+
+  buses.forEach(bus => {
+    const gps = gpsMap[bus.device_id];
+    if (gps) {
+      bus.latitude    = gps.latitude;
+      bus.longitude   = gps.longitude;
+      bus.speed_kmh   = gps.speed_kmh;
+      bus.heading_deg = gps.heading_deg;
+      bus._lastPing   = new Date(gps.recorded_at);
+    }
+  });
+
+  // Init state
+  BusState.initBuses(buses);
+  allBusesCache = buses;
+
+  // Remove skeleton
+  document.getElementById('busListSkeleton')?.remove();
+
+  // Render bus list
+  renderBusList(BusState.getAll());
+
+  // Place markers for buses that have GPS
+  BusState.getAllVisible().forEach(bus => {
+    if (bus.latitude != null) {
+      TrackingMarker.upsertMarker(bus);
+    }
+  });
+
+  // Fit map to markers if any
+  if (TrackingMarker.count() > 0) {
+    setTimeout(() => TrackingMarker.fitAll(), 500);
+    document.getElementById('noGpsOverlay')?.classList.remove('show');
+  } else {
+    document.getElementById('noGpsOverlay')?.classList.add('show');
+  }
+
+  // Update counts
+  _updateCounts();
+}
+
+// ── Render the bus roster list ────────────────────────────────
+function renderBusList(buses) {
+  const listEl = document.getElementById('busList');
+  if (!listEl) return;
+
+  // Apply filter
+  let filtered = buses;
+  if (currentFilter === 'online')  filtered = buses.filter(b => b.status === 'online');
+  if (currentFilter === 'offline') filtered = buses.filter(b => b.status !== 'online');
+
+  // Apply search
+  const query = document.getElementById('panelSearch')?.value?.trim().toLowerCase();
+  if (query) {
+    filtered = filtered.filter(b =>
+      b.number_plate?.toLowerCase().includes(query) ||
+      b.device_id?.toLowerCase().includes(query)    ||
+      b.routes?.route_number?.toLowerCase().includes(query)
+    );
+  }
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="bus-list-empty">
+        <div class="bus-list-empty-icon">🚌</div>
+        <div class="bus-list-empty-text">No buses match your filter.<br/>Try "All" to see everything.</div>
+      </div>`;
+    return;
+  }
+
+  // Sort: online first, then by plate
+  filtered.sort((a, b) => {
+    if (a.status === 'online' && b.status !== 'online') return -1;
+    if (a.status !== 'online' && b.status === 'online') return  1;
+    return a.number_plate.localeCompare(b.number_plate);
+  });
+
+  listEl.innerHTML = filtered.map(bus => _buildBusCard(bus)).join('');
+
+  // Attach click listeners
+  listEl.querySelectorAll('.bus-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selectBus(card.dataset.deviceId);
+    });
+  });
+}
+
+function _buildBusCard(bus) {
+  const statusClass = bus.status === 'online' ? 'online' : (bus.status === 'alert' ? 'alert' : 'offline');
+  const speed       = bus.speed_kmh != null ? `${Math.round(bus.speed_kmh)} km/h` : '—';
+  const seen        = bus._lastPing ? TrackingStatus.formatLastSeen(bus._lastPing) : 'No GPS';
+  const route       = bus.routes?.route_number || '—';
+  const isSelected  = selectedDeviceId === bus.device_id;
+
+  return `
+    <div class="bus-card ${statusClass} ${isSelected ? 'selected' : ''}" data-device-id="${bus.device_id}" id="card-${_safeId(bus.device_id)}">
+      <div class="bus-card-icon ${statusClass}">
+        🚌
+        <span class="bus-card-status-ring ${statusClass}"></span>
+      </div>
+      <div class="bus-card-info">
+        <span class="bus-card-plate">${escHtml(bus.number_plate)}</span>
+        <span class="bus-card-route">${escHtml(route)} ${bus.bus_type ? '· ' + escHtml(bus.bus_type) : ''}</span>
+      </div>
+      <div class="bus-card-meta">
+        <span class="bus-card-speed">${bus.status === 'online' ? speed : bus.status.toUpperCase()}</span>
+        <span class="bus-card-time">${seen}</span>
+      </div>
+    </div>`;
+}
+
+// ── Select a bus ──────────────────────────────────────────────
+function selectBus(deviceId) {
+  if (!deviceId) return;
+
+  // Deselect previous
+  if (selectedDeviceId) {
+    document.getElementById(`card-${_safeId(selectedDeviceId)}`)?.classList.remove('selected');
+    if (trailVisible) {
+      TrackingTrail.hideTrail();
+      trailVisible = false;
+      document.getElementById('detailTrailBtn')?.classList.remove('active');
+    }
+  }
+
+  selectedDeviceId = deviceId;
+  window.NAVBUS_SELECTED_BUS = deviceId;
+
+  const bus = BusState.getByDeviceId(deviceId);
+  if (!bus) return;
+
+  // Highlight card
+  document.getElementById(`card-${_safeId(deviceId)}`)?.classList.add('selected');
+
+  // Fly map to bus
+  if (bus.latitude != null) {
+    TrackingMarker.flyTo(deviceId, 15);
+    setTimeout(() => TrackingMarker.openPopup(deviceId), 1200);
+  }
+
+  // Show detail overlay
+  _updateDetailOverlay(bus);
+  document.getElementById('busDetailOverlay')?.classList.add('visible');
+
+  // Update HUD
+  document.getElementById('hudSelected')?.style.setProperty('display', 'flex');
+  document.getElementById('hudSelectedPlate').textContent = bus.number_plate;
+
+  // Pre-load trail from DB
+  TrackingTrail.preloadFromDB(deviceId, 40);
+
+  window.dispatchEvent(new CustomEvent('navbus:bus_selected', { detail: { deviceId } }));
+}
+
+// ── Update detail overlay ─────────────────────────────────────
+function _updateDetailOverlay(bus) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val || '—';
+  };
+
+  set('detailPlate',   bus.number_plate);
+  set('detailSpeed',   TrackingStatus.formatSpeed(bus.speed_kmh));
+  set('detailRoute',   bus.routes?.route_number ? `${bus.routes.route_number} — ${bus.routes.name}` : '—');
+  set('detailDriver',  bus.drivers?.name || '—');
+  set('detailHeading', bus.heading_deg != null ? `${TrackingStatus.headingToCardinal(bus.heading_deg)} (${Math.round(bus.heading_deg)}°)` : '—');
+  set('detailCoords',  TrackingStatus.formatCoords(bus.latitude, bus.longitude));
+  set('detailLastPing', bus._lastPing ? TrackingStatus.formatLastSeen(bus._lastPing) : 'No GPS');
+
+  const statusEl = document.getElementById('detailStatus');
+  if (statusEl) {
+    statusEl.textContent = bus.status || '—';
+    statusEl.className   = `detail-stat-value ${bus.status === 'online' ? 'online-value' : 'offline-value'}`;
+  }
+
+  // Update monitor link
+  const linkEl = document.getElementById('detailViewBtn');
+  if (linkEl) linkEl.href = `bus-detail.html?id=${bus.id || ''}`;
+}
+
+// ── BusState change listeners ─────────────────────────────────
+BusState.onUpdate((event, payload) => {
+  if (event === 'init') {
+    // Already handled above
+    return;
+  }
+
+  if (event === 'gps_update') {
+    const { bus, gpsRow } = payload;
+
+    // Flash bus card
+    const cardEl = document.getElementById(`card-${_safeId(bus.device_id)}`);
+    if (cardEl) {
+      // Update speed and time
+      const speedEl = cardEl.querySelector('.bus-card-speed');
+      const timeEl  = cardEl.querySelector('.bus-card-time');
+      if (speedEl) speedEl.textContent = `${Math.round(gpsRow.speed_kmh || 0)} km/h`;
+      if (timeEl)  timeEl.textContent  = 'Just now';
+
+      cardEl.classList.add('gps-ping');
+      setTimeout(() => cardEl.classList.remove('gps-ping'), 900);
+
+      // Move to top of list if online filter
+      if (currentFilter !== 'offline') {
+        const parent = cardEl.parentElement;
+        if (parent && cardEl !== parent.firstChild) {
+          // Only re-sort periodically, not every ping (performance)
+        }
+      }
+    } else {
+      // New bus came online — re-render list
+      renderBusList(BusState.getAll());
+    }
+
+    // If this is the selected bus, update detail overlay
+    if (bus.device_id === selectedDeviceId) {
+      _updateDetailOverlay(bus);
+    }
+  }
+
+  if (event === 'bus_offline') {
+    const { bus } = payload;
+    TrackingMarker.removeMarker(bus.device_id);
+
+    // Update card status
+    const cardEl = document.getElementById(`card-${_safeId(bus.device_id)}`);
+    if (cardEl) {
+      cardEl.classList.remove('online');
+      cardEl.classList.add('offline');
+      const ringEl = cardEl.querySelector('.bus-card-status-ring');
+      const iconEl = cardEl.querySelector('.bus-card-icon');
+      if (ringEl) { ringEl.className = 'bus-card-status-ring offline'; }
+      if (iconEl) { iconEl.className = 'bus-card-icon offline'; }
+      const speedEl = cardEl.querySelector('.bus-card-speed');
+      if (speedEl) speedEl.textContent = 'OFFLINE';
+    }
+  }
+});
+
+// ── GPS update event (from realtime) ─────────────────────────
+window.addEventListener('navbus:gps_update', (e) => {
+  _updateCounts();
+});
+
+// ── Counts update ─────────────────────────────────────────────
+window.addEventListener('navbus:counts_update', () => {
+  _updateCounts();
+});
+
+function _updateCounts() {
+  const online  = BusState.countOnline();
+  const offline = BusState.countOffline();
+  const total   = BusState.countTotal();
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('chipAll',     total);
+  set('chipOnline',  online);
+  set('chipOffline', offline);
+  set('hudOnlineCount', online);
+
+  // Show/hide no-GPS overlay
+  const noGps = document.getElementById('noGpsOverlay');
+  if (noGps) noGps.classList.toggle('show', online === 0);
+}
+
+// ── Marker click → select bus ─────────────────────────────────
+window.addEventListener('navbus:marker_click', (e) => {
+  selectBus(e.detail.device_id);
+});
+
+// ── Detail overlay close ──────────────────────────────────────
+document.getElementById('detailCloseBtn')?.addEventListener('click', () => {
+  document.getElementById('busDetailOverlay')?.classList.remove('visible');
+  document.getElementById('hudSelected')?.style.setProperty('display', 'none');
+  if (selectedDeviceId) {
+    document.getElementById(`card-${_safeId(selectedDeviceId)}`)?.classList.remove('selected');
+  }
+  selectedDeviceId = null;
+  window.NAVBUS_SELECTED_BUS = null;
+  TrackingTrail.hideTrail();
+  trailVisible = false;
+});
+
+// ── Trail toggle ──────────────────────────────────────────────
+document.getElementById('detailTrailBtn')?.addEventListener('click', () => {
+  if (!selectedDeviceId) return;
+  trailVisible = !trailVisible;
+  document.getElementById('detailTrailBtn')?.classList.toggle('active', trailVisible);
+
+  if (trailVisible) {
+    TrackingTrail.showTrail(selectedDeviceId);
+  } else {
+    TrackingTrail.hideTrail();
+  }
+});
+
+// ── Filter chips ──────────────────────────────────────────────
+document.getElementById('fleetChips')?.addEventListener('click', (e) => {
+  const chip = e.target.closest('.fleet-chip');
+  if (!chip) return;
+  const filter = chip.dataset.filter;
+  currentFilter = filter;
+
+  // Update active chip
+  document.querySelectorAll('.fleet-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+
+  renderBusList(BusState.getAll());
+});
+
+// ── Search ────────────────────────────────────────────────────
+document.getElementById('panelSearch')?.addEventListener('input', () => {
+  renderBusList(BusState.getAll());
+});
+
+// ── Last-seen refresh (every 10s) ────────────────────────────
+setInterval(() => {
+  // Update time labels without full re-render
+  document.querySelectorAll('.bus-card').forEach(card => {
+    const deviceId = card.dataset.deviceId;
+    const bus = BusState.getByDeviceId(deviceId);
+    if (!bus) return;
+    const timeEl = card.querySelector('.bus-card-time');
+    if (timeEl) timeEl.textContent = bus._lastPing
+      ? TrackingStatus.formatLastSeen(bus._lastPing) : 'No GPS';
+  });
+
+  // Update detail panel if open
+  if (selectedDeviceId) {
+    const bus = BusState.getByDeviceId(selectedDeviceId);
+    if (bus) {
+      const el = document.getElementById('detailLastPing');
+      if (el) el.textContent = bus._lastPing ? TrackingStatus.formatLastSeen(bus._lastPing) : 'No GPS';
+    }
+  }
+}, 10_000);
+
+// ── HUD clock ─────────────────────────────────────────────────
+function _startClock() {
+  const el = document.getElementById('hudTime');
+  if (!el) return;
+  setInterval(() => {
+    const now = new Date();
+    el.textContent = now.toTimeString().slice(0, 8);
+  }, 1000);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _safeId(str) {
+  return (str || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+// ── Shimmer keyframes ─────────────────────────────────────────
+const shimmerStyle = document.createElement('style');
+shimmerStyle.textContent = `@keyframes shimmer { from{background-position:-300px 0} to{background-position:300px 0} }`;
+document.head.appendChild(shimmerStyle);
+</script>
+</body>
+</html>
