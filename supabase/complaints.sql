@@ -67,3 +67,11 @@ CREATE POLICY "complaints_admin_update"
   WITH CHECK (
     (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
+
+-- ── Add image_url column (run if table already exists) ────────
+ALTER TABLE complaints ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+-- ── Supabase Storage bucket for complaint images ─────────────
+-- Run in Supabase Dashboard → Storage → New Bucket:
+--   Name: complaint-images
+--   Public: true (so images can be viewed by admin)

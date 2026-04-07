@@ -410,6 +410,15 @@
       </div>
       <div class="modal-desc-box" id="mDescription">—</div>
 
+      <!-- Ticket image (shown if attached) -->
+      <div id="mImageWrap" style="display:none;margin-bottom:16px;">
+        <div class="modal-field-label" style="font-family:var(--font-display);font-size:0.58rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Attached Photo</div>
+        <a id="mImageLink" href="#" target="_blank" style="display:block;border-radius:10px;overflow:hidden;border:1px solid var(--gold-border);">
+          <img id="mImage" src="" alt="Ticket" style="width:100%;max-height:260px;object-fit:contain;background:#0a0906;display:block;"/>
+        </a>
+        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:5px;text-align:right;">Click image to open full size</div>
+      </div>
+
       <div class="modal-field">
         <div class="modal-field-label">Update Status</div>
         <select class="status-select" id="mStatusSelect">
@@ -469,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadComplaints() {
   const { data, error } = await NAVBUS_DB
     .from('complaints')
-    .select('id, category, severity, bus_plate, description, status, is_anonymous, user_id, incident_at, admin_note, created_at')
+    .select('id, category, severity, bus_plate, description, status, is_anonymous, user_id, incident_at, admin_note, image_url, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -565,6 +574,19 @@ function openModal(id) {
   set('mUser',       c.is_anonymous ? 'Anonymous' : (c.user_id ? c.user_id.slice(0,12)+'…' : 'Unknown'));
   set('mIncidentAt', c.incident_at ? new Date(c.incident_at).toLocaleString('en-IN') : 'Not specified');
   set('mDescription', c.description);
+
+  // Show ticket image if available
+  const imgWrap = document.getElementById('mImageWrap');
+  const imgEl   = document.getElementById('mImage');
+  const imgLink = document.getElementById('mImageLink');
+  if (c.image_url) {
+    imgEl.src = c.image_url;
+    imgLink.href = c.image_url;
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+    imgEl.src = '';
+  }
   document.getElementById('mStatusSelect').value = c.status;
   document.getElementById('mAdminNote').value = c.admin_note || '';
 

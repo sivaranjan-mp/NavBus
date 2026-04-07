@@ -450,6 +450,73 @@
       to   { opacity: 1; transform: translateY(0); }
     }
     .fade-up { animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+    /* ── Ticket image upload ── */
+    .image-upload-area {
+      border: 2px dashed var(--gold-border);
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--bg-surface);
+      position: relative;
+    }
+    .image-upload-area:hover,
+    .image-upload-area.dragover {
+      border-color: var(--gold-border-2);
+      background: rgba(201,168,76,0.04);
+    }
+    .image-upload-area input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .upload-label {
+      font-family: var(--font-display);
+      font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      display: block; margin-bottom: 3px;
+    }
+    .upload-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+    .image-preview-wrap {
+      display: none;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--gold-border);
+      margin-top: 0;
+    }
+    .image-preview-wrap.has-image { display: block; }
+    .image-preview-wrap img {
+      width: 100%; max-height: 220px;
+      object-fit: cover; display: block;
+    }
+    .image-remove-btn {
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(8,8,6,0.85);
+      border: 1px solid rgba(248,113,113,0.4);
+      color: #f87171;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.75rem;
+      transition: all 0.18s;
+    }
+    .image-remove-btn:hover { background: rgba(248,113,113,0.15); }
+    .image-name-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      background: rgba(201,168,76,0.06);
+      border-top: 1px solid var(--gold-border);
+      font-family: var(--font-mono);
+      font-size: 0.62rem; color: var(--gold);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
@@ -587,6 +654,24 @@
           </div>
         </div>
 
+        <!-- Ticket Image -->
+        <div class="form-section fade-up">
+          <div class="form-section-title">Ticket / Evidence Photo</div>
+          <!-- Preview (shown after file chosen) -->
+          <div class="image-preview-wrap" id="imagePreviewWrap">
+            <img id="imagePreview" src="" alt="Ticket preview"/>
+            <button type="button" class="image-remove-btn" id="imageRemoveBtn" title="Remove image">✕</button>
+            <div class="image-name-chip" id="imageNameChip">📎 filename.jpg</div>
+          </div>
+          <!-- Upload area (shown when no file) -->
+          <div class="image-upload-area" id="imageUploadArea">
+            <input type="file" id="ticketImage" accept="image/*" capture="environment"/>
+            <div class="upload-icon">🎫</div>
+            <span class="upload-label">Attach Ticket or Photo</span>
+            <span class="upload-sub">Tap to take a photo or choose from gallery<br/>JPG, PNG — max 5 MB</span>
+          </div>
+        </div>
+
         <!-- Anonymous -->
         <div class="form-section fade-up">
           <div class="form-section-title">Privacy</div>
@@ -698,6 +783,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const el = document.getElementById('userAvatar');
   if (el) el.textContent = name.charAt(0).toUpperCase();
 
+  initImageUpload();
+
   // Pre-fill incident time to now
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -772,11 +859,8 @@ async function submitComplaint(e) {
   const incidentAt  = document.getElementById('incidentTime').value || null;
   const description = document.getElementById('description').value.trim();
   const isAnonymous = document.getElementById('anonToggle').checked;
+  const imageFile   = document.getElementById('ticketImage').files[0] || null;
 
-  if (!busPlate && !description) {
-    alert('Please fill in at least the bus plate number and description.');
-    return;
-  }
   if (!description) {
     alert('Please describe the issue.');
     return;
@@ -786,6 +870,30 @@ async function submitComplaint(e) {
   btn.classList.add('loading');
   btn.disabled = true;
 
+  // ── Upload image to Supabase Storage (if provided) ────────
+  let imageUrl = null;
+  if (imageFile) {
+    if (imageFile.size > 5 * 1024 * 1024) {
+      alert('Image is too large. Please choose a file under 5 MB.');
+      btn.classList.remove('loading'); btn.disabled = false; return;
+    }
+    const ext  = imageFile.name.split('.').pop();
+    const path = `complaints/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data: upData, error: upErr } = await NAVBUS_DB.storage
+      .from('complaint-images')
+      .upload(path, imageFile, { cacheControl: '3600', upsert: false });
+
+    if (upErr) {
+      // Non-fatal — submit without image but warn
+      console.warn('Image upload failed:', upErr.message);
+    } else {
+      const { data: urlData } = NAVBUS_DB.storage
+        .from('complaint-images')
+        .getPublicUrl(path);
+      imageUrl = urlData?.publicUrl || null;
+    }
+  }
+
   const payload = {
     user_id:        isAnonymous ? null : (_session?.user?.id || null),
     category,
@@ -794,6 +902,7 @@ async function submitComplaint(e) {
     route_id:       routeId,
     incident_at:    incidentAt ? new Date(incidentAt).toISOString() : null,
     description,
+    image_url:      imageUrl,
     is_anonymous:   isAnonymous,
     status:         'pending',
   };
@@ -818,6 +927,41 @@ async function submitComplaint(e) {
   const ref = data?.id ? `REF# ${data.id.slice(0, 8).toUpperCase()}` : 'REF# SUBMITTED';
   document.getElementById('successRef').textContent = ref;
   document.getElementById('successCard').classList.add('visible');
+}
+
+// ── Image upload preview wiring ───────────────────────────────
+function initImageUpload() {
+  const input   = document.getElementById('ticketImage');
+  const area    = document.getElementById('imageUploadArea');
+  const preview = document.getElementById('imagePreview');
+  const wrap    = document.getElementById('imagePreviewWrap');
+  const nameChip= document.getElementById('imageNameChip');
+  const removeBtn = document.getElementById('imageRemoveBtn');
+
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      preview.src = ev.target.result;
+      wrap.classList.add('has-image');
+      area.style.display = 'none';
+      nameChip.textContent = '📎 ' + file.name;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  removeBtn.addEventListener('click', () => {
+    input.value = '';
+    preview.src = '';
+    wrap.classList.remove('has-image');
+    area.style.display = '';
+  });
+
+  // Drag-over highlight
+  area.addEventListener('dragover',  () => area.classList.add('dragover'));
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop',      () => area.classList.remove('dragover'));
 }
 
 // ── Load complaint history ─────────────────────────────────────
