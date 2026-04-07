@@ -7,7 +7,16 @@
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
   <link rel="stylesheet" href="css/user.layout.css"/>
+  <!-- Anti-flash: apply theme before first paint -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('navbus_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="css/user.home.css"/>
+  <script src="../../js/theme.js"></script>
+  <script src="js/user.theme.js"></script>
 </head>
 <body>
 
@@ -30,7 +39,19 @@
           <span id="statOnlineBuses">0</span> LIVE
         </span>
       </div>
-      <a href="profile.html" class="user-avatar-btn" id="userAvatar">U</a>
+      <!-- Theme toggle -->
+      <button id="headerThemeBtn" onclick="NavBusTheme.toggle(); updateHeaderThemeIcon()" title="Toggle theme" style="
+        width:34px;height:34px;border-radius:50%;
+        background:transparent;
+        border:1px solid var(--gold-border);
+        color:var(--text-muted);
+        display:flex;align-items:center;justify-content:center;
+        transition:all 0.18s;cursor:pointer;font-size:0.9rem;
+      " onmouseenter="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+         onmouseleave="this.style.borderColor='var(--gold-border)';this.style.color='var(--text-muted)'">
+        <span id="headerThemeIcon">🌙</span>
+      </button>
+            <a href="profile.html" class="user-avatar-btn" id="userAvatar">U</a>
     </div>
   </header>
 
@@ -210,6 +231,14 @@
 <script src="../../js/config.js"></script>
 <script src="../../js/utils.js"></script>
 <script src="js/user.auth.guard.js"></script>
-<script src="js/user.home.js"></script>
+<script src="js/user.home.js">
+// ── Header theme icon sync ────────────────────────────────────
+function updateHeaderThemeIcon() {
+  const el = document.getElementById('headerThemeIcon');
+  if (el) el.textContent = NavBusTheme.isDark() ? '🌙' : '☀️';
+}
+document.addEventListener('DOMContentLoaded', updateHeaderThemeIcon);
+window.addEventListener('navbus:theme_change', updateHeaderThemeIcon);
+</script>
 </body>
 </html>
