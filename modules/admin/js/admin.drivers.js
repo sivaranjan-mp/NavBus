@@ -60,17 +60,20 @@ function renderDrivers(list) {
   if (!list.length) {
     tbody.innerHTML = `
       <tr><td colspan="7">
-        <div class="empty-state">
-          <div class="empty-state-icon">🔍</div>
-          <p>No drivers match your search.</p>
+        <div class="table-empty">
+          <div class="table-empty-icon">🔍</div>
+          <div class="table-empty-title">No Drivers Found</div>
+          <div class="table-empty-sub">No drivers match your search.</div>
         </div>
       </td></tr>`;
+    document.getElementById('tableFooter').style.display = 'none';
     return;
   }
+  document.getElementById('tableFooter').style.display = 'flex';
 
   const statusMap = {
-    active:   ['status-badge status-active',   'Active'],
-    inactive: ['status-badge status-inactive', 'Inactive'],
+    active:   ['status-badge active',   'Active'],
+    inactive: ['status-badge inactive', 'Inactive'],
   };
 
   tbody.innerHTML = list.map(d => {
@@ -82,7 +85,9 @@ function renderDrivers(list) {
         <td>
           <div class="driver-name-cell">
             <div class="driver-avatar">${escHtml(d.initials)}</div>
-            <span style="font-weight:600;color:var(--text-primary);">${escHtml(d.name)}</span>
+            <div class="driver-info">
+              <span class="driver-name">${escHtml(d.name)}</span>
+            </div>
           </div>
         </td>
         <td style="font-family:var(--font-mono);font-size:0.78rem;">
@@ -90,13 +95,19 @@ function renderDrivers(list) {
           ${expired ? '<span style="color:#f87171;font-size:0.65rem;margin-left:4px;">EXPIRED</span>' : ''}
         </td>
         <td>${escHtml(d.phone)}</td>
-        <td style="font-family:var(--font-mono);font-size:0.78rem;">${escHtml(d.assigned_bus)}</td>
-        <td>${escHtml(d.exp)}</td>
-        <td><span class="${cls}">${label}</span></td>
         <td>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="openEditModal('${d.id}')">Edit</button>
-            <button class="btn btn-danger btn-sm"  onclick="confirmDelete('${d.id}','${escHtml(d.name)}')">Remove</button>
+          <span class="assigned-bus-badge">${escHtml(d.assigned_bus)}</span>
+        </td>
+        <td>${escHtml(d.exp)}</td>
+        <td><span class="${cls}"><span class="status-dot"></span>${label}</span></td>
+        <td>
+          <div class="table-actions">
+            <button class="action-btn edit" title="Edit" onclick="openEditModal('${d.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="action-btn delete" title="Remove" onclick="confirmDelete('${d.id}','${escHtml(d.name)}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
           </div>
         </td>
       </tr>`;
@@ -182,9 +193,20 @@ function closeModal() {
 
 function clearForm() {
   ['fName','fPhone','fEmail','fLicense','fExpiry','fJoining','fNotes'].forEach(id => setValue(id, ''));
+  ['fPhoto','fBiometric'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const activeEl = document.getElementById('fIsActive');
   if (activeEl) activeEl.checked = true;
   clearFormError();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve(null);
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
 }
 
 // ── Save (insert or update) ───────────────────────────────────
@@ -210,6 +232,17 @@ async function saveDriver() {
     joining_date:   joining,
     notes, is_active: isActive,
   };
+
+  const photoFile = document.getElementById('fPhoto')?.files[0];
+  const bioFile   = document.getElementById('fBiometric')?.files[0];
+
+  try {
+    if (photoFile) payload.photo_url = await fileToBase64(photoFile);
+    if (bioFile) payload.biometric_url = await fileToBase64(bioFile);
+  } catch(e) {
+    showFormError('Failed to read files.');
+    return;
+  }
 
   setBtnLoading(true);
 
@@ -251,8 +284,8 @@ function showSkeleton() {
   const tbody = document.getElementById('driversTableBody');
   if (!tbody) return;
   tbody.innerHTML = Array(4).fill('').map(() => `
-    <tr>
-      ${Array(7).fill('<td><div style="height:14px;background:var(--bg-tertiary);border-radius:4px;animation:pulse 1.4s ease-in-out infinite;"></div></td>').join('')}
+    <tr class="skeleton-row">
+      ${Array(7).fill('<td><div class="skeleton-block" style="width:100%"></div></td>').join('')}
     </tr>`).join('');
 }
 
@@ -261,9 +294,10 @@ function showError(msg) {
   if (!tbody) return;
   tbody.innerHTML = `
     <tr><td colspan="7">
-      <div class="empty-state">
-        <div class="empty-state-icon">⚠️</div>
-        <p>${escHtml(msg)}</p>
+      <div class="table-empty">
+        <div class="table-empty-icon">⚠️</div>
+        <div class="table-empty-title">Failed to load</div>
+        <div class="table-empty-sub">${escHtml(msg)}</div>
         <button class="btn btn-outline btn-sm" onclick="loadDrivers()">Retry</button>
       </div>
     </td></tr>`;

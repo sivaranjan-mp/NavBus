@@ -88,6 +88,7 @@ CREATE TABLE drivers (
   license_number  TEXT NOT NULL UNIQUE,
   license_expiry  DATE NOT NULL,
   photo_url       TEXT,
+  biometric_url   TEXT,
   address         TEXT,
   date_of_birth   DATE,
   joining_date    DATE NOT NULL DEFAULT CURRENT_DATE,
