@@ -1,6 +1,6 @@
 /* ============================================================
    NavBus — Map Initializer
-   Bootstrap the Leaflet map with dark tile layers.
+   Bootstrap the Leaflet map with dark/light tile layers.
    Returns the map instance.
    ============================================================ */
 
@@ -19,6 +19,10 @@ const MapInit = (() => {
     streets: {
       url:   'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       label: 'No Labels',
+    },
+    white: {
+      url:   'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      label: 'White',
     },
   };
 

@@ -32,7 +32,7 @@ const APP_ROUTES = {
 
 // ── App Constants ────────────────────────────────────────────
 const APP_NAME    = 'NavBus';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 /* ── Supabase Setup Notes ────────────────────────────────────
    1. Go to your Supabase Dashboard → Authentication → Providers → Email

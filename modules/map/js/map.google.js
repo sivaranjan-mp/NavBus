@@ -81,6 +81,67 @@ const NavBusGoogleMap = (() => {
       elementType: 'labels.text.fill',   stylers: [{ color: '#4a3e2c' }] },
   ];
 
+  // ── White / light map style ───────────────────────────────────────
+  const WHITE_STYLE = [
+    { elementType: 'geometry',           stylers: [{ color: '#f8f6f0' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+    { elementType: 'labels.text.fill',   stylers: [{ color: '#4a4035' }] },
+
+    { featureType: 'administrative',
+      elementType: 'geometry',           stylers: [{ color: '#e8e4da' }] },
+    { featureType: 'administrative',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#5c5044' }] },
+
+    { featureType: 'administrative.province',
+      elementType: 'geometry.stroke',    stylers: [{ color: '#c9a84c' }, { weight: 1.2 }] },
+    { featureType: 'administrative.country',
+      elementType: 'geometry.stroke',    stylers: [{ color: '#8a6c28' }, { weight: 1.5 }] },
+
+    { featureType: 'road',
+      elementType: 'geometry',           stylers: [{ color: '#ffffff' }] },
+    { featureType: 'road.highway',
+      elementType: 'geometry',           stylers: [{ color: '#fde68a' }] },
+    { featureType: 'road.highway',
+      elementType: 'geometry.stroke',    stylers: [{ color: '#e9c94c' }, { weight: 0.8 }] },
+    { featureType: 'road.arterial',
+      elementType: 'geometry',           stylers: [{ color: '#f5f0e8' }] },
+    { featureType: 'road.local',
+      elementType: 'geometry',           stylers: [{ color: '#ede8df' }] },
+    { featureType: 'road',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#6b5e40' }] },
+    { featureType: 'road',
+      elementType: 'labels.icon',        stylers: [{ visibility: 'off' }] },
+
+    { featureType: 'water',
+      elementType: 'geometry',           stylers: [{ color: '#aed3ea' }] },
+    { featureType: 'water',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#4a7a9b' }] },
+
+    { featureType: 'landscape',
+      elementType: 'geometry',           stylers: [{ color: '#f2ede5' }] },
+    { featureType: 'landscape.natural',
+      elementType: 'geometry',           stylers: [{ color: '#e8f0e0' }] },
+
+    { featureType: 'poi',
+      elementType: 'geometry',           stylers: [{ color: '#e8f0e0' }] },
+    { featureType: 'poi',
+      elementType: 'labels',             stylers: [{ visibility: 'off' }] },
+    { featureType: 'poi.park',
+      elementType: 'geometry',           stylers: [{ color: '#c8e0b8' }] },
+    { featureType: 'poi.park',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#4a7035' }] },
+
+    { featureType: 'transit',
+      elementType: 'geometry',           stylers: [{ color: '#e8e2d8' }] },
+    { featureType: 'transit.station',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#6b5e40' }] },
+
+    { featureType: 'administrative.locality',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#4a3e2c' }] },
+    { featureType: 'administrative.neighborhood',
+      elementType: 'labels.text.fill',   stylers: [{ color: '#6b5e40' }] },
+  ];
+
   // ── Satellite style (lighter overlay for comparison) ──────────
   const SATELLITE_STYLE = [];
 
@@ -134,6 +195,9 @@ const NavBusGoogleMap = (() => {
     } else if (name === 'roads') {
       _map.setMapTypeId('roadmap');
       _map.setOptions({ styles: [] });
+    } else if (name === 'white') {
+      _map.setMapTypeId('roadmap');
+      _map.setOptions({ styles: WHITE_STYLE });
     } else {
       _map.setMapTypeId('roadmap');
       _map.setOptions({ styles: DARK_GOLD_STYLE });
@@ -186,6 +250,7 @@ const NavBusGoogleMap = (() => {
   return {
     TN_CENTER,
     DARK_GOLD_STYLE,
+    WHITE_STYLE,
     init,
     getInstance,
     setStyle,
