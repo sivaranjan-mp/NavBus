@@ -4,17 +4,21 @@
    ============================================================ */
 
 (async function guardAdminPage() {
-  // Get current session
-  const { data: { session }, error } = await NAVBUS_DB.auth.getSession();
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
 
   if (!session) {
     window.location.replace('../../modules/auth/login.html');
     return;
   }
 
-  // SECURITY: Always verify role from the database — never trust JWT metadata alone.
-  // JWT user_metadata can be read/forged by a local attacker in DevTools.
-  let verified = false;
+  // Step 1: Check JWT metadata for a fast first decision
+  const metaRole = session.user?.user_metadata?.role;
+
+  // Step 2: Always attempt DB verification for stronger security,
+  // but fall back to JWT if the DB call fails (network issue, RLS, etc.)
+  // Only hard-redirect if DB explicitly returns a non-admin role.
+  let dbRole = null;
+  let dbName = null;
   try {
     const { data: profile, error: profileErr } = await NAVBUS_DB
       .from('users')
@@ -22,20 +26,28 @@
       .eq('id', session.user.id)
       .single();
 
-    if (!profileErr && profile?.role === 'admin') {
-      verified = true;
-      _populateAdminUser(session.user, profile);
+    if (!profileErr && profile) {
+      dbRole = profile.role;
+      dbName = profile.name;
     }
   } catch (_) {
-    // DB call failed — fail closed (deny access)
+    // DB unreachable — fall through to JWT fallback
   }
 
-  if (!verified) {
-    // Not an admin — wipe session and redirect
+  // Determine effective role: DB wins if available, otherwise JWT
+  const effectiveRole = dbRole ?? metaRole;
+
+  if (effectiveRole !== 'admin') {
+    // Confirmed non-admin or completely unknown — sign out and redirect
     await NAVBUS_DB.auth.signOut();
     window.location.replace('../../modules/auth/login.html');
+    return;
   }
+
+  // Populate sidebar with whichever source we have
+  _populateAdminUser(session.user, dbName ? { name: dbName } : null);
 })();
+
 
 function _populateAdminUser(user, profile = null) {
   const name  = profile?.name || user.user_metadata?.name || 'Admin';

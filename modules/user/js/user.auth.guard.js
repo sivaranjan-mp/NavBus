@@ -7,7 +7,7 @@
    ============================================================ */
 
 window.NAVBUS_USER_READY = (async function guardUserPage() {
-  const { data: { session }, error } = await NAVBUS_DB.auth.getSession();
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
 
   if (!session) {
     window.location.replace('../auth/login.html');

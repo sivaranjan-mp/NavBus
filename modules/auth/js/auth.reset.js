@@ -37,7 +37,7 @@ async function handleVerifyRecoveryOTP(email, token) {
 // ── STEP 3: Update to new password ───────────────────────────
 async function handleUpdatePassword(newPassword, confirmPassword) {
   if (!validatePassword(newPassword)) {
-    return { error: { message: 'Password must be at least 8 characters.' } };
+    return { error: { message: getPasswordRequirementHint() } };
   }
   if (newPassword !== confirmPassword) {
     return { error: { message: 'Passwords do not match.' } };

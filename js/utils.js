@@ -13,19 +13,29 @@
   }
 })();
 
-// ── Session Inactivity Timeout ────────────────────────────────
-// Signs the user out automatically after inactivity
+// ── Session Inactivity Timeout ──────────────────────────────
+// Signs the user out automatically after inactivity on protected pages only.
+// Does NOT run on auth pages (login, register, forgot, reset).
 (function initSessionTimeout(inactiveMinutes = 60) {
+  // Skip timeout entirely on auth pages
+  const path = window.location.pathname;
+  const isAuthPage = path.includes('/modules/auth/') ||
+                     path.includes('/auth/login')    ||
+                     path.endsWith('login.html')     ||
+                     path.endsWith('register.html')  ||
+                     path.endsWith('forgot-password.html') ||
+                     path.endsWith('reset-password.html');
+  if (isAuthPage) return;
+
   let _timer;
   const _reset = () => {
     clearTimeout(_timer);
     _timer = setTimeout(async () => {
-      await NAVBUS_DB.auth.signOut();
-      const path = window.location.pathname;
-      if (path.includes('/admin/'))       window.location.replace('../../modules/auth/login.html');
-      else if (path.includes('/user/'))   window.location.replace('../modules/auth/login.html');
-      else if (path.includes('/modules/auth/')) return; // already on login
-      else                                window.location.replace('modules/auth/login.html');
+      if (typeof NAVBUS_DB !== 'undefined') await NAVBUS_DB.auth.signOut();
+      const p = window.location.pathname;
+      if (p.includes('/admin/'))     window.location.replace('../../modules/auth/login.html');
+      else if (p.includes('/user/')) window.location.replace('../modules/auth/login.html');
+      else                           window.location.replace('modules/auth/login.html');
     }, inactiveMinutes * 60 * 1000);
   };
   ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(e =>
