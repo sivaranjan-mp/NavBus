@@ -1,6 +1,6 @@
 /* ============================================================
    NavBus — Admin Users Module
-   Reads from Supabase `profiles` table (synced from auth.users)
+   Reads from Supabase `users` table
    Actions: view, toggle active status, change role
    ============================================================ */
 
@@ -17,7 +17,7 @@ async function loadUsers() {
   showSkeleton();
 
   const { data, error } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('id, name, email, role, is_active, created_at, updated_at')
     .order('created_at', { ascending: false });
 
@@ -119,7 +119,7 @@ function updateStats(all) {
 // ── Change role ───────────────────────────────────────────────
 async function changeRole(id, newRole) {
   const { error } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .update({ role: newRole, updated_at: new Date().toISOString() })
     .eq('id', id);
 
@@ -137,7 +137,7 @@ window.changeRole = changeRole;
 // ── Toggle active ─────────────────────────────────────────────
 async function toggleActive(id, currentlyActive) {
   const { error } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .update({ is_active: !currentlyActive, updated_at: new Date().toISOString() })
     .eq('id', id);
 

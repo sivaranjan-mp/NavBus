@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://mt1.google.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.cartocdn.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://mt1.google.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <title>NavBus — Live Track</title>
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
@@ -101,7 +104,7 @@
         </svg>
         Updates every ping
       </span>
-      <button class="reconnect-btn" onclick="subscribeGPS()">Reconnect</button>
+      <button class="reconnect-btn" id="reconnectBtn">Reconnect</button>
     </div>
 
   </div>
@@ -114,7 +117,7 @@
       No GPS signal received in the last 90 seconds.<br/>
       The bus may have stopped or lost connection.
     </div>
-    <button onclick="window.location.reload()"
+    <button id="offlineRefreshBtn"
       style="margin-top:16px;padding:10px 24px;border-radius:10px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:var(--gold);font-family:var(--font-display);font-size:0.7rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;cursor:pointer;transition:all 0.18s;"
       onmouseover="this.style.background='rgba(201,168,76,0.2)'"
       onmouseout="this.style.background='rgba(201,168,76,0.12)'">

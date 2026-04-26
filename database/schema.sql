@@ -551,6 +551,27 @@ CREATE POLICY "users_update_own"
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
 
+-- Prevent users from updating restricted columns (role, is_active)
+CREATE OR REPLACE FUNCTION check_restricted_user_updates()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  -- Only admins can change roles or active status
+  IF (SELECT role FROM users WHERE id = auth.uid()) != 'admin' THEN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+      RAISE EXCEPTION 'Not authorized to change role';
+    END IF;
+    IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+      RAISE EXCEPTION 'Not authorized to change active status';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_users_restrict_updates
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION check_restricted_user_updates();
+
 CREATE POLICY "feedback_insert_own"
   ON feedback FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
@@ -564,47 +585,36 @@ CREATE POLICY "travel_history_read_own"
   USING (true);
 
 -- ── Admin role: full read/write via role check ────────────────
+-- Security Definer function to safely check admin role without causing infinite recursion in RLS
+CREATE OR REPLACE FUNCTION is_admin() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+
 CREATE POLICY "admin_all_users"
   ON users FOR ALL TO authenticated
-  USING (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  )
-  WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "admin_all_drivers"
   ON drivers FOR ALL TO authenticated
-  USING (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  )
-  WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "admin_all_buses"
   ON buses FOR ALL TO authenticated
-  USING (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  )
-  WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "admin_all_travel_history"
   ON travel_history FOR ALL TO authenticated
-  USING (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  )
-  WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 CREATE POLICY "admin_all_feedback"
   ON feedback FOR ALL TO authenticated
-  USING (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  )
-  WITH CHECK (
-    (SELECT role FROM users WHERE id = auth.uid()) = 'admin'
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());

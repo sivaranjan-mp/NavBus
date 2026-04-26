@@ -20,9 +20,9 @@ const MapInit = (() => {
       url:   'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       label: 'No Labels',
     },
-    white: {
-      url:   'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      label: 'White',
+    default: {
+      url:   'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      label: 'Default',
     },
   };
 

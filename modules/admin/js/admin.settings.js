@@ -1,15 +1,19 @@
 /* ============================================================
    NavBus — Admin Settings Module
-   - Profile: loads from profiles table, saves name
-   - Password: uses NAVBUS_DB.auth.updateUser()
-   - Preferences: stored in localStorage
-   - API keys: display-only (from config.js)
+   - Profile:       loads/saves to public.users table
+   - Password:      verifies current, updates via Supabase Auth
+   - Notifications: persisted to localStorage (navbus_admin_prefs)
+   - Tracking:      persisted to localStorage (navbus_admin_tracking)
+   - Organisation:  persisted to localStorage (navbus_admin_org)
+   - API panel:     display-only (from config.js globals)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadProfile();
   prefillApiPanel();
   loadPreferences();
+  loadTrackingSettings();
+  loadOrgSettings();
   bindActions();
 });
 
@@ -21,12 +25,10 @@ async function loadProfile() {
   const userId = session.user.id;
   const email  = session.user.email;
 
-  // Populate email field (always from auth)
   setVal('fProfileEmail', email);
 
-  // Load name + phone from profiles table
   const { data: profile } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('name, phone')
     .eq('id', userId)
     .single();
@@ -36,7 +38,6 @@ async function loadProfile() {
     setVal('fProfilePhone', profile.phone || '');
   }
 
-  // Store userId for save
   window._SETTINGS_USER_ID = userId;
 }
 
@@ -53,8 +54,8 @@ async function saveProfile() {
   setBtnLoading('btnSaveProfile', true, 'Saving…', 'Save Profile');
 
   const { error } = await NAVBUS_DB
-    .from('profiles')
-    .update({ name, phone, updated_at: new Date().toISOString() })
+    .from('users')
+    .update({ name, phone })
     .eq('id', window._SETTINGS_USER_ID);
 
   setBtnLoading('btnSaveProfile', false, '', 'Save Profile');
@@ -64,10 +65,10 @@ async function saveProfile() {
     return;
   }
 
-  // Also update sidebar user name
-  const nameEl = document.getElementById('sidebarUserName');
-  if (nameEl) nameEl.textContent = name;
+  // Update sidebar
+  const nameEl   = document.getElementById('sidebarUserName');
   const avatarEl = document.getElementById('sidebarAvatar');
+  if (nameEl)   nameEl.textContent   = name;
   if (avatarEl) avatarEl.textContent = name.slice(0, 2).toUpperCase();
 
   showMsg('profileMsg', 'Profile saved successfully.', 'success');
@@ -93,13 +94,10 @@ async function changePassword() {
     return;
   }
 
-  // Supabase doesn't expose a "verify current password" method on client SDK.
-  // We re-authenticate to verify the current password before updating.
   const { data: { session } } = await NAVBUS_DB.auth.getSession();
   const email = session?.user?.email;
   if (!email) { showMsg('pwdMsg', 'Session expired. Please log in again.', 'error'); return; }
 
-  // Verify current password by signing in
   setBtnLoading('btnChangePwd', true, 'Verifying…', 'Update Password');
   const { error: signInErr } = await NAVBUS_DB.auth.signInWithPassword({ email, password: current });
 
@@ -125,7 +123,6 @@ window.changePassword = changePassword;
 
 // ── Prefill API panel from config.js ─────────────────────────
 function prefillApiPanel() {
-  // config.js already defines SUPABASE_URL and SUPABASE_ANON_KEY globally
   if (typeof SUPABASE_URL !== 'undefined') {
     const urlEl = document.getElementById('fSupabaseUrl');
     if (urlEl) { urlEl.value = SUPABASE_URL; urlEl.readOnly = true; }
@@ -136,14 +133,20 @@ function prefillApiPanel() {
   }
 }
 
-// ── Preferences (localStorage) ────────────────────────────────
-const PREFS_KEY = 'navbus_admin_prefs';
+// ── Notifications / Preferences (localStorage) ───────────────
+const PREFS_KEY    = 'navbus_admin_prefs';
+const TRACKING_KEY = 'navbus_admin_tracking';
+const ORG_KEY      = 'navbus_admin_org';
+
+const PREF_TOGGLES = [
+  'prefGpsAlert', 'prefSoundAlert', 'prefCameraAlert',
+  'prefAutoRefresh', 'prefEmailAlert',
+];
 
 function loadPreferences() {
   try {
     const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    const checks = ['prefEmailAlert', 'prefSoundAlert', 'prefAutoRefresh', 'prefDarkMode'];
-    checks.forEach(id => {
+    PREF_TOGGLES.forEach(id => {
       const el = document.getElementById(id);
       if (el && id in prefs) el.checked = prefs[id];
     });
@@ -152,7 +155,7 @@ function loadPreferences() {
 
 function savePreferences() {
   const prefs = {};
-  ['prefEmailAlert', 'prefSoundAlert', 'prefAutoRefresh', 'prefDarkMode'].forEach(id => {
+  PREF_TOGGLES.forEach(id => {
     const el = document.getElementById(id);
     if (el) prefs[id] = el.checked;
   });
@@ -161,11 +164,100 @@ function savePreferences() {
 }
 window.savePreferences = savePreferences;
 
+// ── Tracking settings (localStorage) ─────────────────────────
+const TRACKING_FIELDS = [
+  { id: 'fPollingInterval', key: 'pollingInterval', default: '10' },
+  { id: 'fMaxSpeed',        key: 'maxSpeed',        default: '80' },
+  { id: 'fGpsTimeout',      key: 'gpsTimeout',      default: '2'  },
+  { id: 'fIdleTimeout',     key: 'idleTimeout',     default: '5'  },
+];
+const TRACKING_TOGGLES = [
+  { id: 'prefRealtimeTracking', key: 'realtimeTracking', default: true },
+  { id: 'prefTrackHistory',     key: 'trackHistory',     default: true },
+];
+
+function loadTrackingSettings() {
+  try {
+    const t = JSON.parse(localStorage.getItem(TRACKING_KEY) || '{}');
+    TRACKING_FIELDS.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el) el.value = t[f.key] ?? f.default;
+    });
+    TRACKING_TOGGLES.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el) el.checked = f.key in t ? t[f.key] : f.default;
+    });
+  } catch {}
+}
+
+function saveTrackingSettings() {
+  const t = {};
+  TRACKING_FIELDS.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) t[f.key] = el.value;
+  });
+  TRACKING_TOGGLES.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) t[f.key] = el.checked;
+  });
+  localStorage.setItem(TRACKING_KEY, JSON.stringify(t));
+  showMsg('trackingMsg', 'Tracking settings saved.', 'success');
+}
+
+function resetTrackingSettings() {
+  localStorage.removeItem(TRACKING_KEY);
+  loadTrackingSettings();
+  showMsg('trackingMsg', 'Reset to defaults.', 'success');
+}
+window.saveTrackingSettings  = saveTrackingSettings;
+window.resetTrackingSettings = resetTrackingSettings;
+
+// ── Organisation settings (localStorage) ─────────────────────
+const ORG_FIELDS = [
+  { id: 'fOrgName',        key: 'orgName',        default: 'NavBus Transport Dept.'                },
+  { id: 'fOrgEmail',       key: 'orgEmail',       default: 'admin@navbus.in'                       },
+  { id: 'fTimezone',       key: 'timezone',       default: 'Asia/Kolkata (IST, UTC+5:30)'          },
+  { id: 'fDateFormat',     key: 'dateFormat',     default: 'YYYY-MM-DD'                            },
+  { id: 'fOrgDescription', key: 'orgDescription', default: 'Bus tracking and fleet management system for Ranipet district.' },
+];
+
+function loadOrgSettings() {
+  try {
+    const o = JSON.parse(localStorage.getItem(ORG_KEY) || '{}');
+    ORG_FIELDS.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el && f.key in o) el.value = o[f.key];
+    });
+  } catch {}
+}
+
+function saveOrgSettings() {
+  const o = {};
+  ORG_FIELDS.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (el) o[f.key] = el.value;
+  });
+  localStorage.setItem(ORG_KEY, JSON.stringify(o));
+  showMsg('orgMsg', 'Organisation settings saved.', 'success');
+}
+
+function resetOrgSettings() {
+  localStorage.removeItem(ORG_KEY);
+  loadOrgSettings();
+  showMsg('orgMsg', 'Reset to defaults.', 'success');
+}
+window.saveOrgSettings  = saveOrgSettings;
+window.resetOrgSettings = resetOrgSettings;
+
 // ── Bind buttons ──────────────────────────────────────────────
 function bindActions() {
-  document.getElementById('btnSaveProfile')?.addEventListener('click', saveProfile);
-  document.getElementById('btnChangePwd')?.addEventListener('click', changePassword);
-  document.getElementById('btnSavePrefs')?.addEventListener('click', savePreferences);
+  document.getElementById('btnSaveProfile')?.addEventListener('click',   saveProfile);
+  document.getElementById('btnChangePwd')?.addEventListener('click',     changePassword);
+  document.getElementById('btnSavePrefs')?.addEventListener('click',     savePreferences);
+  document.getElementById('btnSaveTracking')?.addEventListener('click',  saveTrackingSettings);
+  document.getElementById('btnResetTracking')?.addEventListener('click', resetTrackingSettings);
+  document.getElementById('btnSaveOrg')?.addEventListener('click',       saveOrgSettings);
+  document.getElementById('btnResetOrg')?.addEventListener('click',      resetOrgSettings);
 }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -174,11 +266,7 @@ function setVal(id, v) { const el = document.getElementById(id); if (el) el.valu
 
 function showMsg(targetId, msg, type) {
   const el = document.getElementById(targetId);
-  if (!el) {
-    // Fallback toast if no dedicated message element
-    showToast(msg, type);
-    return;
-  }
+  if (!el) { showToast(msg, type); return; }
   el.textContent = msg;
   el.style.display   = 'block';
   el.style.color     = type === 'success' ? '#4ade80' : '#f87171';
@@ -206,5 +294,5 @@ function showToast(msg, type = 'success') {
   setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3500);
 }
 
-// Legacy stub — no longer a no-op
-window.saved = () => showToast('Use the Save buttons in each section.', 'success');
+// Keep legacy stub working (used by API tab reset buttons for now)
+window.saved = () => showToast('Changes saved.', 'success');

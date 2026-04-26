@@ -117,9 +117,8 @@ function initMap() {
     preferCanvas:     true,
   });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
     maxZoom: 19,
-    subdomains: 'abcd',
   }).addTo(_map);
 
   // Place marker if we have GPS
@@ -262,6 +261,7 @@ function updateSheetStats(bus, gps) {
 // ── Realtime GPS subscription ─────────────────────────────────
 function subscribeGPS() {
   if (!_busData?.device_id) return;
+  if (_channel) NAVBUS_DB.removeChannel(_channel);
 
   _channel = NAVBUS_DB
     .channel(`track_${_busData.device_id}`)
@@ -352,4 +352,10 @@ function showOfflineOverlay(msg) {
 // ── Cleanup on page leave ────────────────────────────────────
 window.addEventListener('beforeunload', () => {
   if (_channel) NAVBUS_DB.removeChannel(_channel);
+});
+
+// ── Wire up buttons (replaces inline onclick handlers) ───────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('reconnectBtn')?.addEventListener('click', () => subscribeGPS());
+  document.getElementById('offlineRefreshBtn')?.addEventListener('click', () => window.location.reload());
 });

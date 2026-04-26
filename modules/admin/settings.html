@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <title>NavBus — Settings</title>
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
@@ -119,15 +122,16 @@
 
             <div class="settings-section-title" style="margin-top:28px;">Organisation</div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Organisation Name</label><input class="form-input" value="NavBus Transport Dept."/></div>
-              <div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" type="email" value="admin@navbus.in"/></div>
+              <div class="form-group"><label class="form-label">Organisation Name</label><input class="form-input" id="fOrgName" value="NavBus Transport Dept."/></div>
+              <div class="form-group"><label class="form-label">Contact Email</label><input class="form-input" id="fOrgEmail" type="email" value="admin@navbus.in"/></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Timezone</label><select class="form-input"><option selected>Asia/Kolkata (IST, UTC+5:30)</option><option>UTC</option></select></div>
-              <div class="form-group"><label class="form-label">Date Format</label><select class="form-input"><option>DD/MM/YYYY</option><option selected>YYYY-MM-DD</option></select></div>
+              <div class="form-group"><label class="form-label">Timezone</label><select class="form-input" id="fTimezone"><option>Asia/Kolkata (IST, UTC+5:30)</option><option>UTC</option></select></div>
+              <div class="form-group"><label class="form-label">Date Format</label><select class="form-input" id="fDateFormat"><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select></div>
             </div>
-            <div class="form-group"><label class="form-label">System Description</label><textarea class="form-input" rows="3" style="resize:vertical;">Bus tracking and fleet management system for Ranipet district.</textarea></div>
-            <div class="save-bar"><button class="btn btn-outline btn-md">Reset</button><button class="btn btn-gold btn-md" onclick="saved()">Save Changes</button></div>
+            <div class="form-group"><label class="form-label">System Description</label><textarea class="form-input" id="fOrgDescription" rows="3" style="resize:vertical;">Bus tracking and fleet management system for Ranipet district.</textarea></div>
+            <div id="orgMsg" style="display:none;font-size:0.8rem;margin-top:6px;"></div>
+            <div class="save-bar"><button class="btn btn-outline btn-md" id="btnResetOrg">Reset</button><button class="btn btn-gold btn-md" id="btnSaveOrg">Save Changes</button></div>
           </div>
 
           <!-- API -->
@@ -157,16 +161,17 @@
           <div class="settings-panel" id="tab-tracking">
             <div class="settings-section-title">GPS & Tracking</div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Polling Interval (seconds)</label><input class="form-input" type="number" value="10" min="5" max="60"/></div>
-              <div class="form-group"><label class="form-label">Max Speed Limit (km/h)</label><input class="form-input" type="number" value="80" min="30" max="120"/></div>
+              <div class="form-group"><label class="form-label">Polling Interval (seconds)</label><input class="form-input" id="fPollingInterval" type="number" value="10" min="5" max="60"/></div>
+              <div class="form-group"><label class="form-label">Max Speed Limit (km/h)</label><input class="form-input" id="fMaxSpeed" type="number" value="80" min="30" max="120"/></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">GPS Timeout (minutes)</label><input class="form-input" type="number" value="2" min="1" max="10"/></div>
-              <div class="form-group"><label class="form-label">Idle Timeout (minutes)</label><input class="form-input" type="number" value="5" min="1" max="30"/></div>
+              <div class="form-group"><label class="form-label">GPS Timeout (minutes)</label><input class="form-input" id="fGpsTimeout" type="number" value="2" min="1" max="10"/></div>
+              <div class="form-group"><label class="form-label">Idle Timeout (minutes)</label><input class="form-input" id="fIdleTimeout" type="number" value="5" min="1" max="30"/></div>
             </div>
-            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Real-time Tracking</div><div class="toggle-desc">Enable live bus position updates on map</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Track History</div><div class="toggle-desc">Store and display 24-hour route history</div></div><label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label></div>
-            <div class="save-bar"><button class="btn btn-outline btn-md">Reset to Defaults</button><button class="btn btn-gold btn-md" onclick="saved()">Save Changes</button></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Real-time Tracking</div><div class="toggle-desc">Enable live bus position updates on map</div></div><label class="toggle"><input type="checkbox" id="prefRealtimeTracking" checked/><span class="toggle-slider"></span></label></div>
+            <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Track History</div><div class="toggle-desc">Store and display 24-hour route history</div></div><label class="toggle"><input type="checkbox" id="prefTrackHistory" checked/><span class="toggle-slider"></span></label></div>
+            <div id="trackingMsg" style="display:none;font-size:0.8rem;margin-top:6px;"></div>
+            <div class="save-bar"><button class="btn btn-outline btn-md" id="btnResetTracking">Reset to Defaults</button><button class="btn btn-gold btn-md" id="btnSaveTracking">Save Changes</button></div>
           </div>
 
           <!-- Security -->

@@ -8,36 +8,33 @@
   const { data: { session }, error } = await NAVBUS_DB.auth.getSession();
 
   if (!session) {
-    // Not logged in → send to login
-    // FIX (Bug 2): Use path relative to admin/ folder
     window.location.replace('../../modules/auth/login.html');
     return;
   }
 
-  // Check role from user_metadata (fast) or DB fallback
-  const metaRole = session.user?.user_metadata?.role;
+  // SECURITY: Always verify role from the database — never trust JWT metadata alone.
+  // JWT user_metadata can be read/forged by a local attacker in DevTools.
+  let verified = false;
+  try {
+    const { data: profile, error: profileErr } = await NAVBUS_DB
+      .from('users')
+      .select('role, name')
+      .eq('id', session.user.id)
+      .single();
 
-  if (metaRole === 'admin') {
-    // Populate header user info immediately
-    _populateAdminUser(session.user);
-    return;
+    if (!profileErr && profile?.role === 'admin') {
+      verified = true;
+      _populateAdminUser(session.user, profile);
+    }
+  } catch (_) {
+    // DB call failed — fail closed (deny access)
   }
 
-  // FIX (Bug 1): Changed from('users') → from('profiles') to match supabase/schema.sql
-  const { data: profile } = await NAVBUS_DB
-    .from('profiles')
-    .select('role, name')
-    .eq('id', session.user.id)
-    .single();
-
-  if (!profile || profile.role !== 'admin') {
-    // Not an admin — redirect to user dashboard
-    // FIX (Bug 2): Use path relative to admin/ folder
-    window.location.replace('../../user/home.html');
-    return;
+  if (!verified) {
+    // Not an admin — wipe session and redirect
+    await NAVBUS_DB.auth.signOut();
+    window.location.replace('../../modules/auth/login.html');
   }
-
-  _populateAdminUser(session.user, profile);
 })();
 
 function _populateAdminUser(user, profile = null) {

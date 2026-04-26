@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <title>NavBus — Sign In</title>
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
@@ -117,7 +120,68 @@
   <script src="js/auth.redirect.js"></script>
   <script src="js/auth.session.js"></script>
   <script>
-    // ── Redirect if already logged in ──────────────────────
+    // ── Brute-force rate limiter ───────────────────────────────────
+    const _RATE_KEY   = 'navbus_login_attempts';
+    const _MAX_TRIES  = 5;
+    const _LOCK_MS    = 5 * 60 * 1000; // 5 minutes
+    let _lockTimer    = null;
+
+    function _getRateData() {
+      try { return JSON.parse(sessionStorage.getItem(_RATE_KEY) || '{}'); } catch { return {}; }
+    }
+    function _setRateData(d) {
+      sessionStorage.setItem(_RATE_KEY, JSON.stringify(d));
+    }
+    function _recordFailure() {
+      const d = _getRateData();
+      d.count    = (d.count || 0) + 1;
+      d.lastFail = Date.now();
+      if (d.count >= _MAX_TRIES) d.lockedUntil = Date.now() + _LOCK_MS;
+      _setRateData(d);
+      return d;
+    }
+    function _clearFailures() {
+      sessionStorage.removeItem(_RATE_KEY);
+    }
+    function _isLocked() {
+      const d = _getRateData();
+      if (d.lockedUntil && Date.now() < d.lockedUntil) return d.lockedUntil;
+      return false;
+    }
+    function _applyLockUI(until) {
+      const btn         = document.getElementById('loginBtn');
+      const emailInput  = document.getElementById('loginEmail');
+      const pwdInput    = document.getElementById('loginPassword');
+      btn.disabled      = true;
+      emailInput.disabled = true;
+      pwdInput.disabled   = true;
+      const tick = () => {
+        const rem = Math.ceil((until - Date.now()) / 1000);
+        if (rem <= 0) {
+          _clearFailures();
+          btn.disabled        = false;
+          emailInput.disabled = false;
+          pwdInput.disabled   = false;
+          btn.textContent     = 'Sign In';
+          btn.style.opacity   = '1';
+          clearInterval(_lockTimer);
+          return;
+        }
+        const m = Math.floor(rem / 60), s = rem % 60;
+        btn.textContent   = `Locked — ${m}:${String(s).padStart(2,'0')}`;
+        btn.style.opacity = '0.5';
+      };
+      tick();
+      _lockTimer = setInterval(tick, 1000);
+    }
+
+    // Check lock immediately on page load
+    (function() {
+      const until = _isLocked();
+      if (until) _applyLockUI(until);
+    })();
+
+    // ── Redirect if already logged in ──────────────────────────────
     (async () => { await redirectIfAuthenticated(); })();
 
     // ── Toggle Password Visibility ─────────────────────────
@@ -157,6 +221,16 @@
       if (error) {
         setButtonLoading(btn, false);
 
+        // Record failure for rate limiting
+        const rateData = _recordFailure();
+        const remaining = _MAX_TRIES - rateData.count;
+
+        if (rateData.lockedUntil) {
+          _applyLockUI(rateData.lockedUntil);
+          Toast.error('Too many failed attempts. Please wait 5 minutes.');
+          return;
+        }
+
         // Handle unconfirmed email
         if (error.message?.toLowerCase().includes('not confirmed') ||
             error.message?.toLowerCase().includes('email not confirmed')) {
@@ -177,6 +251,7 @@
       }
 
       Toast.success('Signed in successfully!');
+      _clearFailures();
       setTimeout(async () => {
         await redirectByRole(data.user);
       }, 600);

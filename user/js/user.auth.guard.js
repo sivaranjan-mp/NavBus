@@ -6,25 +6,33 @@
    ============================================================ */
 
 window.NAVBUS_USER_READY = (async function guardUserPage() {
-  const { data: { session }, error } = await NAVBUS_DB.auth.getSession();
+  const { data: { session } } = await NAVBUS_DB.auth.getSession();
 
   if (!session) {
     window.location.replace('../modules/auth/login.html');
     return null;
   }
 
-  // FIX (Bug 1): Changed from('users') → from('profiles') to match supabase/schema.sql
+  // Always verify role from DB — never trust JWT metadata alone
   const { data: profile } = await NAVBUS_DB
     .from('profiles')
     .select('id, name, email, role')
     .eq('id', session.user.id)
     .single();
 
+  const role = profile?.role || session.user.user_metadata?.role || 'user';
+
+  // Security: if an admin accidentally lands on a user page, redirect them
+  if (role === 'admin') {
+    window.location.replace('../modules/admin/dashboard.html');
+    return null;
+  }
+
   const user = {
     id:        session.user.id,
     name:      profile?.name  || session.user.user_metadata?.name  || 'Passenger',
     email:     profile?.email || session.user.email || '',
-    role:      profile?.role  || session.user.user_metadata?.role  || 'user',
+    role,
     createdAt: session.user.created_at || null,
   };
 
@@ -46,5 +54,4 @@ window.NAVBUS_USER_READY = (async function guardUserPage() {
 
   return user;
 })();
-  if (nameEl)     nameEl.innerHTML       = `${firstName} <span>👋</span>`;
-})();
+

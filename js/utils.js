@@ -2,6 +2,38 @@
    NavBus — Global Utility Functions
    ============================================================ */
 
+// ── Production Console Suppression ──────────────────────────
+// Disable console output on deployed site to prevent info leakage
+(function _suppressConsoleInProd() {
+  const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+  if (!isLocal) {
+    ['log', 'debug', 'info', 'warn', 'table', 'dir'].forEach(m => {
+      console[m] = () => {};
+    });
+  }
+})();
+
+// ── Session Inactivity Timeout ────────────────────────────────
+// Signs the user out automatically after inactivity
+(function initSessionTimeout(inactiveMinutes = 60) {
+  let _timer;
+  const _reset = () => {
+    clearTimeout(_timer);
+    _timer = setTimeout(async () => {
+      await NAVBUS_DB.auth.signOut();
+      const path = window.location.pathname;
+      if (path.includes('/admin/'))       window.location.replace('../../modules/auth/login.html');
+      else if (path.includes('/user/'))   window.location.replace('../modules/auth/login.html');
+      else if (path.includes('/modules/auth/')) return; // already on login
+      else                                window.location.replace('modules/auth/login.html');
+    }, inactiveMinutes * 60 * 1000);
+  };
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(e =>
+    document.addEventListener(e, _reset, { passive: true })
+  );
+  _reset();
+})();
+
 // ── Toast Notification System ────────────────────────────────
 const Toast = (() => {
   let container = null;
@@ -159,7 +191,16 @@ function validateEmail(email) {
 }
 
 function validatePassword(password) {
-  return password.length >= 8;
+  // Min 10 chars, at least one uppercase, one number
+  if (password.length < 10)         return false;
+  if (!/[A-Z]/.test(password))      return false;
+  if (!/[0-9]/.test(password))      return false;
+  return true;
+}
+
+// Password strength message for validation errors
+function getPasswordRequirementHint() {
+  return 'Password must be at least 10 characters with one uppercase letter and one number.';
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -178,3 +219,19 @@ function debounce(fn, delay = 300) {
     timer = setTimeout(() => fn(...args), delay);
   };
 }
+
+// ── Input Sanitization ────────────────────────────────────────
+// Strip HTML tags from user-supplied strings before rendering
+function sanitizeInput(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+// Alias used in template literals
+const escHtml = sanitizeInput;

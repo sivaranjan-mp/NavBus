@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <title>NavBus — Live Fleet Map</title>
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
@@ -192,14 +195,9 @@
           <circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a10 10 0 0 0 0 20h.44A10 10 0 0 0 12.22 2z"/>
         </svg>
       </button>
-      <button class="gmap-ctrl-btn" data-style="roads" data-tip="Road Map" id="styleRoads">
+      <button class="gmap-ctrl-btn" data-style="default" data-tip="Default Map" id="styleDefault">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="3" y1="12" x2="21" y2="12"/><polyline points="8 8 12 4 16 8"/><polyline points="16 16 12 20 8 16"/>
-        </svg>
-      </button>
-      <button class="gmap-ctrl-btn" data-style="white" data-tip="White Map" id="styleWhite">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 0 20M2 12h20"/>
         </svg>
       </button>
     </div>

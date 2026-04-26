@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests;"/>
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <title>NavBus — Admin Dashboard</title>
   <link rel="stylesheet" href="../../css/variables.css"/>
   <link rel="stylesheet" href="../../css/reset.css"/>
@@ -201,20 +204,5 @@
 <script src="../../js/utils.js"></script>
 <script src="js/admin.auth.guard.js"></script>
 <script src="js/admin.layout.js"></script>
-<script>
-  // Dashboard stats
-  (async () => {
-    const { data } = await NAVBUS_DB.from('buses').select('status').eq('is_active', true);
-    if (!data) return;
-    const total   = data.length;
-    const online  = data.filter(b => b.status === 'online').length;
-    const offline = data.filter(b => b.status === 'offline').length;
-    const maint   = data.filter(b => b.status === 'maintenance').length;
-    ['statTotal','statOnline','statOffline','statMaint'].forEach((id, i) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = [total, online, offline, maint][i];
-    });
-  })();
-</script>
 </body>
 </html>
