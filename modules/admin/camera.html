@@ -263,7 +263,7 @@ let _selectedBusId  = null;
 
     // 2. Verify admin role (double-check DB, not just metadata)
     const { data: profile, error: profileErr } = await NAVBUS_DB
-      .from('profiles')
+      .from('users')
       .select('id, name, role')
       .eq('id', session.user.id)
       .single();

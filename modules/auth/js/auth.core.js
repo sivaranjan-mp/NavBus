@@ -11,10 +11,10 @@ async function authSignUp(name, email, password) {
     email: email.trim().toLowerCase(),
     password,
     options: {
+      emailRedirectTo: window.location.origin + '/modules/auth/login.html',
       data: {
         name:  name.trim(),
-        role:  role,
-        email: email.trim().toLowerCase(),
+        role:  role
       }
     }
   });
@@ -25,7 +25,7 @@ async function authSignUp(name, email, password) {
   // Fallback: manually insert if trigger not set up yet.
   if (data?.user) {
     const { error: profileError } = await NAVBUS_DB
-      .from('profiles')
+      .from('users')
       .upsert({
         id:    data.user.id,
         name:  name.trim(),
@@ -93,9 +93,9 @@ async function authGetUserRole(user = null) {
   const metaRole = currentUser.user_metadata?.role;
   if (metaRole && ['admin', 'user'].includes(metaRole)) return metaRole;
 
-  // 2. Fallback: query profiles table
+  // 2. Fallback: query users table
   const { data, error } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('role')
     .eq('id', currentUser.id)
     .single();
@@ -109,8 +109,7 @@ async function authSendPasswordReset(email) {
   const { error } = await NAVBUS_DB.auth.resetPasswordForEmail(
     email.trim().toLowerCase(),
     {
-      // Optional: override redirect URL
-      // redirectTo: 'https://yoursite.com/modules/auth/reset-password.html'
+      redirectTo: window.location.origin + '/modules/auth/reset-password.html'
     }
   );
   if (error) return { error };
@@ -142,6 +141,9 @@ async function authResendOTP(email, type = 'signup') {
   const { error } = await NAVBUS_DB.auth.resend({
     type,
     email: email.trim().toLowerCase(),
+    options: {
+      emailRedirectTo: window.location.origin + '/modules/auth/login.html'
+    }
   });
   if (error) return { error };
   return { success: true };

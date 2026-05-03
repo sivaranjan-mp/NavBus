@@ -273,15 +273,7 @@
 <script src="../../js/utils.js"></script>
 
 <!-- Auth guard -->
-<script>
-(async () => {
-  const { data: { session } } = await NAVBUS_DB.auth.getSession();
-  if (!session) { window.location.replace('../auth/login.html'); return; }
-  if (session.user?.user_metadata?.role !== 'admin') {
-    window.location.replace('../user/home.html');
-  }
-})();
-</script>
+<script src="js/admin.auth.guard.js"></script>
 
 <!-- Map modules -->
 <script src="../map/js/map.google.js"></script>

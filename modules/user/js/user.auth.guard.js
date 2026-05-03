@@ -14,9 +14,9 @@ window.NAVBUS_USER_READY = (async function guardUserPage() {
     return null;
   }
 
-  // Load profile from correct table (profiles, not users)
+  // Load profile from correct table (users, not profiles)
   const { data: profile } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('id, name, email, role')
     .eq('id', session.user.id)
     .single();

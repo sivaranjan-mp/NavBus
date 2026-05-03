@@ -15,7 +15,7 @@ window.NAVBUS_USER_READY = (async function guardUserPage() {
 
   // Always verify role from DB — never trust JWT metadata alone
   const { data: profile } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('id, name, email, role')
     .eq('id', session.user.id)
     .single();

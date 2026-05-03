@@ -41,5 +41,5 @@ const APP_VERSION = '1.1.0';
    4. In "Confirm signup" template, change the link to:
       Use {{ .Token }} so users get a 6-digit OTP instead of a link
       (Dashboard → Auth → URL Configuration → enable OTP)
-   5. Run supabase/schema.sql to create the profiles table
+   5. Run database/schema.sql to create the users table and full schema
    ──────────────────────────────────────────────────────────── */

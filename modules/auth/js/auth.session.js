@@ -69,7 +69,7 @@ async function getLoggedInProfile() {
   if (!session) return null;
 
   const { data } = await NAVBUS_DB
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('id', session.user.id)
     .single();
